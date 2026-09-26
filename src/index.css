@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --main-color: #c4191a;
+    --main-black: #212121;
+    --dark-grey: #626465;
+    --bg-input: #fafafc;
+    --grey-border: #edeeeedb;
+    --grey: #edeeee;
+    --white: #ffffff;
+    --dark-blue: #707070;
+  }
+
+  body {
+    font-family: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--main-black);
+    background-color: #ffffff;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  body::-webkit-scrollbar {
+    width: 0.6em;
+  }
+  body::-webkit-scrollbar-track {
+    background: #e5e5e5;
+  }
+  body::-webkit-scrollbar-thumb {
+    background-color: var(--main-color);
+    outline: 1px solid #708090;
+  }
+}
+
+/* Custom Confidence / M. Nassar Container Matching original widths */
+.confidence-container {
+  width: 100%;
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+@media (min-width: 576px) {
+  .confidence-container {
+    max-width: 540px;
+  }
+}
+@media (min-width: 768px) {
+  .confidence-container {
+    max-width: 720px;
+  }
+}
+@media (min-width: 992px) {
+  .confidence-container {
+    max-width: 960px;
+  }
+}
+@media (min-width: 1200px) {
+  .confidence-container {
+    max-width: 1140px;
+  }
+}
+@media (min-width: 1400px) {
+  .confidence-container {
+    max-width: 1320px;
+  }
+}
+
+/* Signature Red Hover Underline from confidencerealestate.com */
+.hover-link {
+  display: inline-block !important;
+  position: relative;
+  transition: all 0.25s ease-in-out;
+  text-decoration: none;
+}
+
+.hover-link:before {
+  background-color: #c4191a;
+  background-color: var(--main-color);
+  content: "";
+  height: 2px;
+  left: 0;
+  position: absolute;
+  top: 100%;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  width: 100%;
+}
+
+.hover-link.active:before,
+.hover-link:hover:before {
+  background-color: #c4191a;
+  background-color: var(--main-color);
+  transform: scaleX(1);
+}
+
+.hover-link:hover {
+  color: #c4191a !important;
+  color: var(--main-color) !important;
+}
+
+/* Red CTA Buttons */
+.btn-red-cta {
+  background-color: #c4191a;
+  color: #ffffff;
+  border: 1px solid #c4191a;
+  border-radius: 10px;
+  font-weight: 500;
+  text-transform: capitalize;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 1, 1);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-red-cta:hover {
+  filter: brightness(0.88);
+  border-color: #c4191a;
+}
+

@@ -1,0 +1,6 @@
+{
+  "name": "Next Real Estate",
+  "description": "Next Real Estate - Your next chapter is here. Discover premier residential, commercial, and luxury properties in Lebanon with our smart search and AI property advisor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
