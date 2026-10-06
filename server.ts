@@ -710,39 +710,32 @@ app.get('/api/health', (_req: Request, res: Response) => {
 });
 
 // ============================================================================
+//// ============================================================================
+// ============================================================================
 // 8. VITE MIDDLEWARE / STATIC ASSET DELIVERY
 // ============================================================================
 async function startServer() {
-  if (!isProduction) {
-    const { createServer: createViteServer } = await import('vite');
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    // Production static serving with long-term asset cache headers
-    const distPath = path.join(__dirname, 'dist');
-    app.use(
-      express.static(distPath, {
-        maxAge: '1y',
-        etag: true,
-        setHeaders: (res, filePath) => {
-          if (filePath.endsWith('.html')) {
-            // HTML is never cached indefinitely so clients receive fresh builds
-            res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-          } else if (filePath.match(/\.(js|css|svg|png|jpg|jpeg|webp|woff2)$/)) {
-            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-          }
-        },
-      })
-    );
+  // Production static serving with long-term asset cache headers
+  const distPath = path.join(__dirname, 'dist');
+  app.use(
+    express.static(distPath, {
+      maxAge: '1y',
+      etag: true,
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+          // HTML is never cached indefinitely so clients receive fresh builds
+          res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        } else if (filePath.match(/\.(js|css|svg|png|jpg|jpeg|webp|woff2)$/)) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        }
+      },
+    })
+  );
 
-    // Fallback to index.html for SPA client-side routing
-    app.get('*', (_req: Request, res: Response) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
+  // Fallback to index.html for SPA client-side routing
+  app.get('*', (_req: Request, res: Response) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
 
   // Graceful Process Handlers (Guarantees zero crashes under heavy load)
   process.on('uncaughtException', (err) => {
