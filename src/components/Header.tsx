@@ -48,8 +48,16 @@ export const Header: React.FC<HeaderProps> = ({
   const isArabic = lang === 'ar';
 
   // تحقق من حالة الأدمن فور فتح الصفحة
+ // تحقق آمن من حالة الأدمن بدون استدعاء دالة خارجية قد تسبب خطأ
   useEffect(() => {
-    setIsAdmin(apiService.isAdminLoggedIn());
+    try {
+      const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true' || 
+                          localStorage.getItem('auth_token') !== null ||
+                          (typeof apiService.isAdminLoggedIn === 'function' && apiService.isAdminLoggedIn());
+      setIsAdmin(!!adminStatus);
+    } catch (e) {
+      setIsAdmin(false);
+    }
   }, []);
 
   // الروابط الأساسية للجميع
