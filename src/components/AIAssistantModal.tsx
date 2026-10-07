@@ -81,37 +81,37 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
       let filterSuggestion: ChatMessage['suggestedFilter'] = undefined;
 
       if (lower.includes('ras beirut') || lower.includes('رأس بيروت')) {
-        matches = mockProperties.filter((p) => p.neighborhood.toLowerCase().includes('ras beirut'));
+        matches = properties.filter((p) => p.neighborhood.toLowerCase().includes('ras beirut'));
         responseText = isArabic
           ? 'إليك شقة مميزة جداً في رأس بيروت بإطلالة بحرية بانورامية، مواصفات عالية وبناء حديث:'
           : 'Here is a prime option in Ras Beirut featuring panoramic Mediterranean views and brand new construction:';
         filterSuggestion = { location: 'Ras Beirut (رأس بيروت)', label: isArabic ? 'عرض كافة عقارات رأس بيروت' : 'Filter Ras Beirut properties' };
       } else if (lower.includes('musaitbeh') || lower.includes('المصيطبة')) {
-        matches = mockProperties.filter((p) => p.neighborhood.toLowerCase().includes('musaitbeh'));
+        matches = properties.filter((p) => p.neighborhood.toLowerCase().includes('musaitbeh'));
         responseText = isArabic
           ? 'تتوفر شقة عائلية مثالية في المصيطبة بمساحة ١٧٥ م²، ٣ غرف نوم وبناء هادئ عمره ٤ سنوات:'
           : 'Found a great family apartment in Al-Musaitbeh with 175 m², 3 bedrooms, and a well-maintained 4-year-old building:';
         filterSuggestion = { location: 'Al-Musaitbeh (المصيطبة)', label: isArabic ? 'تصفية عقارات المصيطبة' : 'Filter Al-Musaitbeh properties' };
       } else if (lower.includes('mazraa') || lower.includes('المزرعة')) {
-        matches = mockProperties.filter((p) => p.neighborhood.toLowerCase().includes('mazraa'));
+        matches = properties.filter((p) => p.neighborhood.toLowerCase().includes('mazraa'));
         responseText = isArabic
           ? 'على جادة المزرعة الرئيسية، لدينا صالة عرض تجارية راقية بمساحة ٢١٠ م² مثالية للمؤسسات والشركات:'
           : 'On the main Al-Mazraa avenue, we have a prominent 210 m² commercial showroom suitable for corporate headquarters or retail:';
         filterSuggestion = { location: 'Al-Mazraa (المزرعة)', propertyType: 'Commercial', label: isArabic ? 'عقارات المزرعة التجارية' : 'Filter Al-Mazraa Commercial' };
       } else if (lower.includes('new') || lower.includes('جديد') || lower.includes('سنتين') || lower.includes('age')) {
-        matches = mockProperties.filter((p) => p.buildingAge === '0_2' || p.buildingAge === 'under_construction');
+        matches = properties.filter((p) => p.buildingAge === '0_2' || p.buildingAge === 'under_construction');
         responseText = isArabic
           ? 'تم العثور على عقارات حديثة البناء (أقل من سنتين أو قيد الإنشاء) بتشطيبات راقية وضمانات هندسية:'
           : 'Found properties built within the last 2 years or currently under construction with premium specifications:';
         filterSuggestion = { buildingAge: '0_2', label: isArabic ? 'تصفية الأبنية الحديثة' : 'Filter Brand New Buildings' };
       } else if (lower.includes('villa') || lower.includes('فيلا') || lower.includes('mansourieh') || lower.includes('المنصورية')) {
-        matches = mockProperties.filter((p) => p.type === 'Villa');
+        matches = properties.filter((p) => p.type === 'Villa');
         responseText = isArabic
           ? 'إليك فيلا المنصورية الفاخرة، مع مسبح خاص وإطلالة خلابة على الجبل والبحر، مساحة ٥٢٠ م² وبناء حديث ٢٠٢٤:'
           : 'Here is an ultra-luxury villa in Mansourieh, Metn, offering 520 m² of architectural excellence with a private infinity pool:';
         filterSuggestion = { propertyType: 'Villa', label: isArabic ? 'تصفية الفيلات' : 'Filter Villas' };
       } else {
-        matches = mockProperties.slice(0, 2);
+        matches = properties.slice(0, 2);
         responseText = isArabic
           ? `بناءً على طلبك ("${query}")، استعرضت محفظة Next Real Estate واخترت لك هذه الخيارات الموصى بها:`
           : `Based on your request ("${query}"), here are top matching recommendations from Next Real Estate's portfolio:`;

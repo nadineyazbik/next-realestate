@@ -443,7 +443,7 @@ export default function App() {
         - Essential links (Properties, Add a Property, Contact Us)
         - Social media icons (TikTok, Facebook, Instagram, WhatsApp)
       */}
-      <Footer lang={lang} onNavigate={handleNavigation} />
+      <Footer lang={lang} onNavigate={handleNavigation} onOpenAdminPortal={() => setAdminPortalOpen(true)} />
 
       {/* Google OAuth Modal for Favorites */}
       <GoogleSignInModal

@@ -50,15 +50,16 @@ export const Header: React.FC<HeaderProps> = ({
   // تحقق من حالة الأدمن فور فتح الصفحة
  // تحقق آمن من حالة الأدمن بدون استدعاء دالة خارجية قد تسبب خطأ
   useEffect(() => {
-    try {
-      const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true' || 
-                          localStorage.getItem('auth_token') !== null ||
-                          !!apiService.getAdminToken();
-      setIsAdmin(!!adminStatus);
-    } catch (e) {
-      setIsAdmin(false);
-    }
-  }, []);
+  const token = apiService.getAdminToken();
+  if (!token) {
+    setIsAdmin(false);
+    return;
+  }
+  fetch('/api/admin/session', { headers: { Authorization: `Bearer ${token}` } })
+    .then((r) => r.json())
+    .then((d) => setIsAdmin(!!d.authenticated))
+    .catch(() => setIsAdmin(false));
+}, []);
 
   // الروابط الأساسية للجميع
   const baseNavLinks = isArabic
