@@ -53,7 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
     try {
       const adminStatus = localStorage.getItem('isAdminLoggedIn') === 'true' || 
                           localStorage.getItem('auth_token') !== null ||
-                          (typeof apiService.isAdminLoggedIn === 'function' && apiService.isAdminLoggedIn());
+                          !!apiService.getAdminToken();
       setIsAdmin(!!adminStatus);
     } catch (e) {
       setIsAdmin(false);
