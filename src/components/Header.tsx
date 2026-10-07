@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrandLogo } from './BrandLogo';
 import {
   Sparkles,
@@ -11,10 +11,12 @@ import {
   Lock,
   Heart,
   Globe,
+  PlusCircle,
 } from 'lucide-react';
 import { Language } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
 import { QRCodeModal } from './QRCodeModal';
+import { apiService } from '../services/apiService';
 
 interface HeaderProps {
   onNavigate?: (route: string) => void;
@@ -42,28 +44,38 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const isArabic = lang === 'ar';
 
-  const navLinks = isArabic
+  // تحقق من حالة الأدمن فور فتح الصفحة
+  useEffect(() => {
+    setIsAdmin(apiService.isAdminLoggedIn());
+  }, []);
+
+  // الروابط الأساسية للجميع
+  const baseNavLinks = isArabic
     ? [
         { label: 'العقارات', route: 'properties', href: '#properties' },
-        { label: 'أضف عقارك', route: 'add-property', href: '#add-property' },
         { label: 'اتصل بنا', route: 'contact', href: '#contact' },
       ]
     : [
         { label: 'Properties', route: 'properties', href: '#properties' },
-        { label: 'Add a Property', route: 'add-property', href: '#add-property' },
         { label: 'Contact Us', route: 'contact', href: '#contact' },
       ];
 
+  // إذا كنتِ مسجلة دخول كأدمن، نضيف زر "أضف عقارك" تلقائياً للقائمة، وإلا يبقى مخفياً
+  const navLinks = [
+    baseNavLinks[0],
+    ...(isAdmin
+      ? isArabic
+        ? [{ label: 'أضف عقارك', route: 'add-property', href: '#add-property' }]
+        : [{ label: 'Add a Property', route: 'add-property', href: '#add-property' }]
+      : []),
+    baseNavLinks[1],
+  ];
+
   return (
     <>
-      {/* 
-        Clean Minimalist Desktop Navbar (Pixel-for-pixel match to Reference Images):
-        - NOT fixed or sticky: scrolls naturally with page content
-        - When on Home: Transparent over Hero Image
-        - When on All Properties: Clean white background matching mobile/desktop reference screenshots
-      */}
       <header
         id="main-header"
         className={`${
@@ -74,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
         dir={isArabic ? 'rtl' : 'ltr'}
       >
         <div className="confidence-container flex items-center justify-between px-4 sm:px-6">
-          {/* 1. Left Side: Brand Logo & Wordmark (Image 6 & Mobile Screenshot) */}
+          {/* Left Side: Brand Logo */}
           <div className="flex items-center gap-8 lg:gap-10 shrink-0">
             <a
               href="#"
@@ -92,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
               />
             </a>
 
-            {/* 2. Middle / Core Navigation Links (Properties, Add a Property, Contact Us) */}
+            {/* Core Navigation Links */}
             <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
               {navLinks.map((link) => {
                 const isActive = activeRoute === link.route;
@@ -120,9 +132,8 @@ export const Header: React.FC<HeaderProps> = ({
             </nav>
           </div>
 
-          {/* 3. Right Side Actions: [Favorites] [العربية] [Call Us] [Top-Right Three-Dots / Hamburger Menu] */}
+          {/* Right Side Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Wishlist / Favorites Button (Hidden on Mobile, Cleanly accessible inside Burger Menu) */}
             {onOpenFavorites && (
               <button
                 type="button"
@@ -143,7 +154,6 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            {/* Language Switcher (Hidden on Mobile, Cleanly accessible inside Burger Menu) */}
             <button
               onClick={onToggleLang}
               className={`hidden sm:block text-sm font-semibold hover:underline transition cursor-pointer px-1 py-1 ${
@@ -154,7 +164,6 @@ export const Header: React.FC<HeaderProps> = ({
               {isArabic ? 'English' : 'العربية'}
             </button>
 
-            {/* Red Button: Call Us (Direct Phone Call +96176743414 - Desktop only) */}
             <a
               href="tel:+96176743414"
               className="hidden sm:inline-flex items-center justify-center bg-[#c4191a] hover:bg-[#a51516] active:bg-[#8f1213] text-white h-8 px-4 rounded text-xs font-semibold transition shadow-xs select-none"
@@ -163,7 +172,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span>{isArabic ? 'اتصل بنا' : 'Call Us'}</span>
             </a>
 
-            {/* Top-Right Menu Button (Hamburger on Mobile, Three-Dots on Desktop) */}
             <div className="flex items-center">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -188,7 +196,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Clean Options Drawer (Accessible via Top-Right Three-Dots / Hamburger Menu) */}
+        {/* Options Drawer */}
         {mobileMenuOpen && (
           <div
             className={`absolute top-full left-0 right-0 ${
@@ -204,7 +212,6 @@ export const Header: React.FC<HeaderProps> = ({
             dir={isArabic ? 'rtl' : 'ltr'}
           >
             <div className="max-w-xl mx-auto flex flex-col gap-2.5">
-              {/* Standard Navigation Links */}
               {navLinks.map((link) => (
                 <a
                   key={link.route}
@@ -223,7 +230,6 @@ export const Header: React.FC<HeaderProps> = ({
                 </a>
               ))}
 
-              {/* AI Property Advisor Link */}
               <button
                 onClick={() => {
                   onOpenAIAssistant();
@@ -238,7 +244,6 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>{isArabic ? 'المستشار العقاري الذكي' : 'AI Property Advisor'}</span>
               </button>
 
-              {/* Language Switcher inside Burger Menu */}
               <button
                 type="button"
                 onClick={() => {
@@ -259,7 +264,6 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </button>
 
-              {/* Wishlist / Saved Properties */}
               {onOpenFavorites && (
                 <button
                   onClick={() => {
@@ -283,7 +287,6 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               )}
 
-              {/* QR Code Option */}
               <button
                 onClick={() => {
                   setQrModalOpen(true);
@@ -309,67 +312,14 @@ export const Header: React.FC<HeaderProps> = ({
                 <Share2 className="w-3.5 h-3.5 opacity-70" />
               </button>
 
-              {/* Install PWA Button */}
               <div className="py-0.5">
                 <PWAInstallButton lang={lang} variant="drawer" />
               </div>
 
-              {/* Social Media & WhatsApp Direct Row */}
-              <div className="flex items-center justify-center gap-3 py-2 border-t border-white/10">
-                <a
-                  href="https://www.tiktok.com/@next_realestate_lb?_r=1&_t=ZS-9A2HMLcGkjt"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-[#c4191a] text-white flex items-center justify-center transition-all shadow-xs"
-                  title="TikTok"
-                >
-                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.24 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
-                  </svg>
-                </a>
-                <a
-                  href="https://www.facebook.com/share/1GhyQUTpNQ/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-[#c4191a] text-white flex items-center justify-center transition-all shadow-xs"
-                  title="Facebook"
-                >
-                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                    <path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z" />
-                  </svg>
-                </a>
-                <a
-                  href="https://www.instagram.com/next_realestate_lb?stkn=d2Q3cWFkajg3YXkx"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-[#c4191a] text-white flex items-center justify-center transition-all shadow-xs"
-                  title="Instagram"
-                >
-                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                  </svg>
-                </a>
-                <a
-                  href="https://wa.me/message/7TA5OZXYI52NJ1"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full bg-[#25D366] text-white flex items-center justify-center transition-all shadow-xs hover:scale-105"
-                  title="WhatsApp"
-                >
-                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
-                  </svg>
-                </a>
-              </div>
-
-              {/* Action Buttons on Mobile: Call Us & Private Discreet Admin Trigger */}
+              {/* Staff Access / Admin Portal Button */}
               <div className={`pt-2.5 mt-1 border-t ${
                 isLightHeader ? 'border-gray-200' : 'border-white/15'
               } flex items-center justify-between gap-2`}>
-                {/* 
-                  CRITICAL: Admin access is completely hidden from regular users 
-                  and only accessible via this private discreet trigger inside the three-dots/hamburger menu!
-                */}
                 <button
                   type="button"
                   onClick={() => {
@@ -386,7 +336,6 @@ export const Header: React.FC<HeaderProps> = ({
                   <span>{isArabic ? 'إدارة النظام' : 'Staff Access'}</span>
                 </button>
 
-                {/* Call Us Button */}
                 <a
                   href="tel:+96176743414"
                   className="bg-[#c4191a] hover:bg-[#a51516] text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition shadow-xs inline-flex items-center gap-1.5"
@@ -401,7 +350,6 @@ export const Header: React.FC<HeaderProps> = ({
         )}
       </header>
 
-      {/* QR Code Modal */}
       <QRCodeModal
         isOpen={qrModalOpen}
         onClose={() => setQrModalOpen(false)}
