@@ -14,7 +14,7 @@ export default defineConfig(() => {
         includeAssets: [
           'favicon.ico',
           'apple-touch-icon.png',
-          'assets/next_real_estate_logo.svg',
+          
           'pwa-192x192.png',
           'pwa-512x512.png',
           'pwa-maskable-512x512.png',
@@ -22,10 +22,10 @@ export default defineConfig(() => {
         manifest: {
           id: '/',
           name: 'Next Real Estate',
-          short_name: 'Next RE',
+          short_name: 'Next Real Estate',
           description: 'Next Real Estate - Premier property advisory and listings in Lebanon.',
           theme_color: '#c4191a',
-          background_color: '#ffffff',
+          background_color: '#fbf3ea',
           display: 'standalone',
           orientation: 'portrait',
           start_url: '/',
@@ -107,7 +107,7 @@ export default defineConfig(() => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
+      
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
