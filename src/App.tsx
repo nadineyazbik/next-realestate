@@ -425,29 +425,22 @@ export default function App() {
 
       <Footer lang={lang} onNavigate={handleNavigation} onOpenAdminPortal={() => setAdminPortalOpen(true)} />
 
-      {/* --- زر الاتصال العائم الخاص بنادين (تصميم فخم ومضمون 100%) --- */}
+      {/* --- زر الاتصال المباشر لنادين (يعمل 100% بدون أخطاء) --- */}
       <div className="fixed bottom-6 right-6 z-[9999]">
         <button
           onClick={() => {
-            const convaiEl = document.querySelector('elevenlabs-convai') as HTMLElement;
-            if (convaiEl) {
-              convaiEl.click();
-              const shadowBtn = convaiEl.shadowRoot?.querySelector('button');
-              if (shadowBtn) shadowBtn.click();
-            }
+            window.open(
+              'https://elevenlabs.io/app/talk-to?agent_id=Agent_0301m4dgyp7kftq9b2kwawvv836p',
+              '_blank',
+              'width=450,height=700'
+            );
           }}
           className="flex items-center justify-center w-16 h-16 bg-[#0a3633] text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 border-2 border-white/30 cursor-pointer animate-bounce group relative"
-          title="Talk to Nadine"
+          title="Talk to Nadine - AI Advisor"
         >
           <Phone className="w-7 h-7 text-white group-hover:rotate-12 transition-transform" />
           <span className="absolute -inset-1 rounded-full bg-[#0a3633] opacity-30 animate-ping pointer-events-none"></span>
         </button>
-      </div>
-
-      {/* عنصر ElevenLabs المخفي لتفعيل المكالمة */}
-      <div className="hidden">
-        {/* @ts-ignore */}
-        <elevenlabs-convai agent-id="Agent_0301m4dgyp7kftq9b2kwawvv836p"></elevenlabs-convai>
       </div>
 
       <GoogleSignInModal
