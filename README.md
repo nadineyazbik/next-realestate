@@ -1,20 +1,13 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Next Real Estate Platform - Lebanon
 
-# Run and deploy your AI Studio app
+Next Real Estate is a modern, high-performance real estate platform designed for property listings, advanced search filters, and an integrated smart property assistant.
 
-This contains everything you need to run your app locally.
+## Technologies Used
+- **Frontend:** React, TypeScript, Tailwind CSS, Vite
+- **Backend:** Node.js, Express
+- **Features:** Bilingual Interface, Smart AI Property Advisor, PWA Support
 
-View your app in AI Studio: https://ai.studio/apps/39511fdf-6aa1-4f35-858a-6514212b9d78
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
+## Getting Started Locally
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+   ```bash
+   npm install

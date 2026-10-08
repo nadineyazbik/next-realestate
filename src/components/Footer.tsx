@@ -109,7 +109,7 @@ export const Footer: React.FC<FooterProps> = ({ lang = 'en', onNavigate, onOpenA
         </div>
 
         <div className="bg-[#c4191a] text-white py-2 px-4 sm:px-6 text-xs font-medium">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-y-1">
             <div className="flex items-center gap-4">
               <a href="#privacy" className="hover:underline text-white/95">
                 {isArabic ? 'سياسة الخصوصية' : 'Privacy Policy'}
@@ -125,9 +125,10 @@ export const Footer: React.FC<FooterProps> = ({ lang = 'en', onNavigate, onOpenA
               </button>
             </div>
 
-            <div className="flex items-center gap-1.5 text-white/95">
-              <span>Powered by</span>
-              <span className="font-bold tracking-wide">CLOUD SYSTEMS</span>
+            {/* Code Titans - Clean & Visible Signature */}
+            <div className="flex items-center gap-1.5 text-white/90 font-medium">
+              <span className="text-[11px] text-white/70">Developed by</span>
+              <span className="text-[11px] font-bold tracking-wider text-white">Nadine Yazbik &amp; Hasan Fares (Code Titans)</span>
             </div>
           </div>
         </div>
