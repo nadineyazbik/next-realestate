@@ -416,8 +416,42 @@ export default function App() {
 
       <Footer lang={lang} onNavigate={handleNavigation} onOpenAdminPortal={() => setAdminPortalOpen(true)} />
 
-      {/* زر الاتصال الذكي العائم للمستشارة العقارية */}
-      <AICallWidget />
+      {/* --- زر نادين الذكي للاتصال الصوتي المباشر --- */}
+      <div className="fixed bottom-6 right-6 z-[9999]">
+        <button
+          onClick={() => {
+            const widgetElement = document.querySelector('elevenlabs-convai');
+            if (widgetElement) {
+              (widgetElement as HTMLElement).click();
+            }
+          }}
+          className="flex items-center justify-center w-16 h-16 bg-[#0a3633] text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 border-2 border-white/30 cursor-pointer animate-bounce"
+          title="Talk to Nadine - AI Advisor"
+        >
+          <Phone className="w-7 h-7" />
+        </button>
+      </div>
+
+      {/* عنصر ElevenLabs الرسمي مع الـ Agent ID الخاص بكِ */}
+      <div className="hidden">
+        {/* @ts-ignore */}
+        <elevenlabs-convai agent-id="Agent_0301m4dgyp7kftq9b2kwawvv836p"></elevenlabs-convai>
+      </div>
+
+      {/* تحميل سكريبت ElevenLabs تلقائياً عند تشغيل الصفحة */}
+      {(() => {
+        useEffect(() => {
+          const scriptId = 'elevenlabs-convai-script';
+          if (!document.getElementById(scriptId)) {
+            const script = document.createElement('script');
+            script.id = scriptId;
+            script.src = 'https://elevenlabs.io/convai-widget/index.js';
+            script.async = true;
+            document.body.appendChild(script);
+          }
+        }, []);
+        return null;
+      })()}
 
       <GoogleSignInModal
         isOpen={googleSignInOpen}
