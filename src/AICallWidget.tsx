@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Phone, X, Mic, MicOff } from 'lucide-react';
 
 export default function AICallWidget() {
@@ -6,8 +6,23 @@ export default function AICallWidget() {
   const [isCalling, setIsCalling] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
 
-  // المسار الدقيق للصورة التي أضفتِها في مجلد الـ public
+  // الـ Agent ID الخاص بكِ والمربوط بـ ElevenLabs
+  const AGENT_ID = "Agent_0301m4dgyp7kftq9b2kwawvv836p"; 
   const agentImage = "/WhatsApp Image 2026-10-08 at 3.13.06 PM.jpeg";
+
+  // تحميل سكريبت ElevenLabs الـ Widget الرسمي عند فتح النافذة
+  useEffect(() => {
+    if (isOpen) {
+      const scriptId = 'elevenlabs-convai-script';
+      if (!document.getElementById(scriptId)) {
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.src = 'https://elevenlabs.io/convai-widget/index.js';
+        script.async = true;
+        document.body.appendChild(script);
+      }
+    }
+  }, [isOpen]);
 
   return (
     <>
@@ -69,44 +84,22 @@ export default function AICallWidget() {
                 <p className="text-gray-500 text-xs mt-1">AI Property Advisor - Next Real Estate</p>
               </div>
 
-              {/* Call Controls & Status */}
-              <div className="w-full pt-2">
-                {!isCalling ? (
-                  <button
-                    onClick={() => setIsCalling(true)}
-                    className="w-full flex items-center justify-center space-x-2 space-x-reverse border-2 border-[#0a3633] text-[#0a3633] hover:bg-[#0a3633] hover:text-white py-3 px-6 rounded-2xl font-medium transition-all duration-300 shadow-sm cursor-pointer"
-                  >
-                    <Mic className="w-5 h-5" />
-                    <span>Call us here</span>
-                  </button>
-                ) : (
-                  <div className="flex flex-col items-center space-y-4 w-full">
-                    <div className="flex items-center space-x-2 text-emerald-600 font-medium text-sm animate-pulse">
-                      <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
-                      <span>Talking... 00:15</span>
-                    </div>
+              {/* Call Controls & ElevenLabs Embedded Widget */}
+              <div className="w-full pt-2 flex flex-col items-center space-y-4">
+                
+                {/* عنصر ElevenLabs الرسمي المربوط بالـ ID الخاص بكِ */}
+                <div className="w-full flex justify-center">
+                  {/* @ts-ignore */}
+                  <elevenlabs-convai agent-id={AGENT_ID}></elevenlabs-convai>
+                </div>
 
-                    <div className="flex items-center justify-center space-x-6 space-x-reverse w-full">
-                      <button
-                        onClick={() => setIsMuted(!isMuted)}
-                        className={`flex flex-col items-center justify-center w-12 h-12 rounded-full border transition-all cursor-pointer ${
-                          isMuted ? 'bg-gray-200 border-gray-300 text-gray-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
-                        title="Mute"
-                      >
-                        {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                      </button>
-
-                      <button
-                        onClick={() => setIsCalling(false)}
-                        className="flex flex-col items-center justify-center w-14 h-14 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md transition-transform hover:scale-105 cursor-pointer"
-                        title="End Call"
-                      >
-                        <X className="w-6 h-6" />
-                      </button>
-                    </div>
-                  </div>
-                )}
+                {/* زر الإغلاق والإنهاء السريع */}
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="text-xs text-gray-400 hover:text-gray-600 underline pt-2 cursor-pointer"
+                >
+                  إغلاق النافذة
+                </button>
               </div>
 
             </div>

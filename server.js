@@ -16,7 +16,7 @@ app.use((_req, res, next) => {
   res.setHeader("X-Frame-Options", "SAMEORIGIN");
   res.setHeader("X-XSS-Protection", "1; mode=block");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(self), geolocation=()");
   next();
 });
 function sanitizeString(str) {
@@ -288,7 +288,7 @@ app.get("/api/properties", apiRateLimiter, (req, res) => {
     );
   }
   if (saleOrRental && typeof saleOrRental === "string") {
-    const isRental = saleOrRental === "rent";
+    const isRental = ["rent", "rental"].includes(saleOrRental);
     results = results.filter((p) => p.isRental === isRental);
   }
   if (buildingAge && typeof buildingAge === "string" && buildingAge !== "all") {
@@ -470,6 +470,142 @@ app.post(
     });
   }
 );
+var AGENT_API_KEY = process.env.AGENT_API_KEY || "";
+var LEADS_FILE = path.join(__dirname, "leads-store.json");
+function requireAgentKey(req, res, next) {
+  const provided = Buffer.from(String(req.headers["x-agent-key"] || ""));
+  const expected = Buffer.from(AGENT_API_KEY);
+  if (!AGENT_API_KEY || provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {
+    return res.status(401).json({ error: "unauthorized" });
+  }
+  next();
+}
+function norm(s) {
+  return String(s ?? "").toLowerCase().replace(/[\u064B-\u0652\u0640]/g, "").replace(/[أإآ]/g, "\u0627").replace(/ة/g, "\u0647").replace(/ى/g, "\u064A").replace(/[-_'’]/g, " ").replace(/(^|\s)ال/g, "$1").replace(/\bal\s+/g, "").replace(/\s+/g, " ").trim();
+}
+var LOCATION_ALIASES = [
+  ["achrafieh", "ashrafieh", "ashrafiyeh", "\u0627\u0634\u0631\u0641\u064A\u0647"],
+  ["ras beirut", "\u0631\u0627\u0633 \u0628\u064A\u0631\u0648\u062A"],
+  ["musaitbeh", "musaytbeh", "mousaitbeh", "mosaitbeh", "\u0645\u0635\u064A\u0637\u0628\u0647"],
+  ["mazraa", "mazraa", "\u0645\u0632\u0631\u0639\u0647"],
+  ["hamra", "\u062D\u0645\u0631\u0627"],
+  ["verdun", "\u0641\u0631\u062F\u0627\u0646"],
+  ["metn", "matn", "\u0645\u062A\u0646"]
+];
+function expandLocation(q) {
+  const n = norm(q);
+  const out = /* @__PURE__ */ new Set([n]);
+  for (const group of LOCATION_ALIASES) {
+    if (group.some((g) => n.includes(norm(g)) || norm(g).includes(n))) {
+      group.forEach((g) => out.add(norm(g)));
+    }
+  }
+  return [...out].filter(Boolean);
+}
+var TYPE_SYNONYMS = { flat: "apartment", \u0634\u0642\u0647: "apartment" };
+app.post("/api/agent/search-properties", apiRateLimiter, requireAgentKey, (req, res) => {
+  const b = req.body || {};
+  const limit = Math.min(Math.max(Number(b.limit) || 3, 1), 5);
+  let results = propertyListCache.filter((p) => !p.isArchived);
+  if (b.saleOrRental) {
+    const s = norm(b.saleOrRental);
+    const wantRental = ["rent", "rental", "\u0627\u064A\u062C\u0627\u0631", "\u0627\u062C\u0627\u0631"].includes(s);
+    const wantSale = ["sale", "buy", "\u0628\u064A\u0639", "\u0634\u0631\u0627\u0621"].includes(s);
+    if (wantRental) results = results.filter((p) => p.isRental === true);
+    else if (wantSale) results = results.filter((p) => !p.isRental);
+  }
+  if (b.location && String(b.location).trim()) {
+    const variants = expandLocation(String(b.location));
+    results = results.filter((p) => {
+      const hay = norm(
+        [p.location, p.locationAr, p.district, p.districtAr, p.neighborhood, p.neighborhoodAr, p.zone, p.zoneAr].join(" | ")
+      );
+      return variants.some((v) => hay.includes(v));
+    });
+  }
+  if (b.propertyType && String(b.propertyType).trim()) {
+    let t = norm(b.propertyType);
+    t = TYPE_SYNONYMS[t] || t;
+    results = results.filter(
+      (p) => norm([p.type, p.typeAr, p.commercialSubtype, p.category].join(" ")).includes(t)
+    );
+  }
+  if (b.minBeds) results = results.filter((p) => (p.beds ?? 0) >= Number(b.minBeds));
+  if (b.minPrice) results = results.filter((p) => p.price >= Number(b.minPrice));
+  if (b.maxPrice) results = results.filter((p) => p.price <= Number(b.maxPrice));
+  results.sort((a, c) => Number(!!c.isFeatured) - Number(!!a.isFeatured) || a.price - c.price);
+  res.json({
+    total: results.length,
+    results: results.slice(0, limit).map((p) => ({
+      referenceNo: p.referenceNo,
+      title: p.title,
+      titleAr: p.titleAr,
+      location: `${p.neighborhood}, ${p.district}`,
+      locationAr: `${p.neighborhoodAr}\u060C ${p.districtAr}`,
+      forRent: !!p.isRental,
+      price: p.price,
+      currency: p.currency || "USD",
+      beds: p.beds,
+      baths: p.baths,
+      areaSqm: p.areaSqm,
+      buildingAge: p.buildingAgeLabel,
+      furnished: p.furnished
+    })),
+    note: results.length === 0 ? "No matching listing. Offer to take the client details so an agent follows up." : void 0
+  });
+});
+async function notifyAgent(text) {
+  console.log("[Agent Notify]", text);
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text })
+    });
+  } catch (err) {
+    console.error("Notify failed", err);
+  }
+}
+app.post("/api/agent/book-viewing", apiRateLimiter, requireAgentKey, async (req, res) => {
+  const { name, phone, referenceNo, preferredTime, notes } = req.body || {};
+  const digits = String(phone || "").replace(/\D/g, "");
+  if (!name || String(name).trim().length < 2 || digits.length < 7) {
+    return res.status(400).json({ error: "Valid name and phone number are required." });
+  }
+  const property = referenceNo ? propertyListCache.find((p) => p.referenceNo === String(referenceNo)) : void 0;
+  const lead = {
+    id: `lead-${Date.now()}`,
+    type: property ? "viewing" : "callback",
+    name: String(name).trim(),
+    phone: digits,
+    referenceNo: property?.referenceNo || null,
+    propertyTitle: property?.title || null,
+    preferredTime: String(preferredTime || "").slice(0, 100),
+    notes: String(notes || "").slice(0, 500),
+    source: "voice-agent",
+    createdAt: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  try {
+    const existing = fs.existsSync(LEADS_FILE) ? JSON.parse(fs.readFileSync(LEADS_FILE, "utf-8")) : [];
+    existing.push(lead);
+    fs.writeFileSync(LEADS_FILE, JSON.stringify(existing, null, 2), "utf-8");
+  } catch (err) {
+    console.error("Failed to save lead", err);
+  }
+  await notifyAgent(
+    `\u{1F3E0} \u0637\u0644\u0628 \u062C\u062F\u064A\u062F (${lead.type})
+\u0627\u0644\u0627\u0633\u0645: ${lead.name}
+\u0627\u0644\u0631\u0642\u0645: +${lead.phone}
+\u0627\u0644\u0639\u0642\u0627\u0631: ${lead.referenceNo || "\u0639\u0627\u0645"} ${lead.propertyTitle || ""}
+\u0627\u0644\u0648\u0642\u062A \u0627\u0644\u0645\u0637\u0644\u0648\u0628: ${lead.preferredTime || "-"}
+\u0645\u0644\u0627\u062D\u0638\u0627\u062A: ${lead.notes || "-"}
+\u0648\u0627\u062A\u0633\u0627\u0628: https://wa.me/${lead.phone}`
+  );
+  res.json({ success: true, message: "Request recorded. An agent will contact the client." });
+});
 app.get("/api/health", (_req, res) => {
   res.json({
     status: "healthy",
