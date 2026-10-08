@@ -12,6 +12,7 @@ import { InquiryModal } from './components/InquiryModal';
 import { AddPropertyModal } from './components/AddPropertyModal';
 import { AIAssistantModal } from './components/AIAssistantModal';
 import { AdminPortalModal } from './components/AdminPortalModal';
+import AICallWidget from './AICallWidget';
 import { Property, Language, SearchFilterState } from './types';
 import { mockProperties } from './data/properties';
 import { authService, GoogleUser } from './services/authService';
@@ -310,14 +311,6 @@ export default function App() {
       }`}
       dir={isArabic ? 'rtl' : 'ltr'}
     >
-      {/* 
-        1. Top Header: 
-        - Clean branding (logo + Next Real Estate, no awkward wrapping)
-        - Clean hamburger menu button
-        - Notification bell & PWA install
-        - Admin portal hidden inside three-dots menu
-        - Wishlist Favorites trigger with real-time count
-      */}
       <Header
         onNavigate={handleNavigation}
         lang={lang}
@@ -330,7 +323,6 @@ export default function App() {
         favoritesCount={favorites.length}
       />
 
-      {/* Main Content Area: Dedicated Property Page, Catalog, or Home */}
       {viewMode === 'property_details' && selectedProperty ? (
         <PropertyDetailsPage
           property={selectedProperty}
@@ -356,7 +348,6 @@ export default function App() {
           onSearch={handleSearch}
         />
       ) : viewMode === 'all_properties' ? (
-        /* Full Catalog View when user clicks "See All" */
         <AllPropertiesView
           properties={properties}
           initialCategory={allPropertiesInitialCat}
@@ -370,22 +361,13 @@ export default function App() {
           onToggleFavorite={handleToggleFavorite}
         />
       ) : (
-        /* Home Page View */
         <main className="flex-grow">
-          {/* 
-            2. Hero Section: 
-            - Subtitle text permanently deleted ("YOUR NEXT CHAPTER IS HERE" completely removed)
-            - Location cascade dropdown with clear down-arrow indicator
-            - Search button: Wide & appropriately proportioned, arrow icon removed, flat & professional
-            - High transparency glassmorphic design
-          */}
           <HeroSection
             lang={lang}
             onSearch={handleSearch}
             activeFilters={activeFilters}
           />
 
-          {/* Dynamic Search Filter Results Indicator */}
           {filterNotification && (
             <div className="bg-[#18191a] text-white py-3 px-4 text-center text-xs sm:text-sm border-b border-white/10 flex items-center justify-center gap-3 animate-in fade-in duration-200">
               <span className="text-[#c4191a] font-bold uppercase tracking-wider">
@@ -404,7 +386,6 @@ export default function App() {
             </div>
           )}
 
-          {/* 3. Popular Categories Section */}
           <PopularCategories
             activeCategory={activeCategory}
             onSelectCategory={(catId) => {
@@ -417,11 +398,6 @@ export default function App() {
             lang={lang}
           />
 
-          {/* 
-            4. Curated Property Listings:
-            - Platinum and Trending horizontal swipeable carousels dynamically sorted with newest properties first
-            - Instant friction-free Google OAuth for favorites
-          */}
           <div id="properties-section">
             <PropertyListings
               properties={properties}
@@ -438,14 +414,11 @@ export default function App() {
         </main>
       )}
 
-      {/* 
-        5. Clean Minimal Compact Footer:
-        - Essential links (Properties, Add a Property, Contact Us)
-        - Social media icons (TikTok, Facebook, Instagram, WhatsApp)
-      */}
       <Footer lang={lang} onNavigate={handleNavigation} onOpenAdminPortal={() => setAdminPortalOpen(true)} />
 
-      {/* Google OAuth Modal for Favorites */}
+      {/* زر الاتصال الذكي العائم للمستشارة العقارية */}
+      <AICallWidget />
+
       <GoogleSignInModal
         isOpen={googleSignInOpen}
         onClose={() => {
@@ -463,7 +436,6 @@ export default function App() {
         }
       />
 
-      {/* Saved Properties Drawer */}
       <FavoritesDrawer
         isOpen={favoritesDrawerOpen}
         onClose={() => setFavoritesDrawerOpen(false)}
@@ -482,7 +454,6 @@ export default function App() {
         lang={lang}
       />
 
-      {/* General Inquiry / Contact Modal */}
       <InquiryModal
         isOpen={inquiryModalOpen}
         onClose={() => setInquiryModalOpen(false)}
@@ -504,7 +475,6 @@ export default function App() {
         onApplyFilter={handleApplyFilterFromAI}
       />
 
-      {/* Admin Portal Modal (Protected with Administrator Credentials) */}
       <AdminPortalModal
         isOpen={adminPortalOpen}
         onClose={() => setAdminPortalOpen(false)}

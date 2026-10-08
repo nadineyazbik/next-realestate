@@ -25,7 +25,7 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
   next();
 });
 
@@ -460,7 +460,7 @@ app.get('/api/properties', apiRateLimiter, (req: Request, res: Response) => {
   }
 
   if (saleOrRental && typeof saleOrRental === 'string') {
-    const isRental = saleOrRental === 'rent';
+    const isRental = ['rent', 'rental'].includes(saleOrRental);
     results = results.filter((p) => p.isRental === isRental);
   }
 
@@ -699,6 +699,183 @@ app.post(
 );
 
 // Health check endpoint
+// ============================================================================
+// AI VOICE AGENT TOOLS (called by the voice platform, protected by secret key)
+// ============================================================================
+const AGENT_API_KEY = process.env.AGENT_API_KEY || '';
+const LEADS_FILE = path.join(__dirname, 'leads-store.json');
+
+function requireAgentKey(req: Request, res: Response, next: NextFunction) {
+  const provided = Buffer.from(String(req.headers['x-agent-key'] || ''));
+  const expected = Buffer.from(AGENT_API_KEY);
+  if (
+    !AGENT_API_KEY ||
+    provided.length !== expected.length ||
+    !crypto.timingSafeEqual(provided, expected)
+  ) {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+  next();
+}
+
+// Normalize Arabic/English text so "الأشرفية" / "Achrafieh" / "Al-Musaitbeh" match easily
+function norm(s: unknown): string {
+  return String(s ?? '')
+    .toLowerCase()
+    .replace(/[\u064B-\u0652\u0640]/g, '')
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/[-_'’]/g, ' ')
+    .replace(/(^|\s)ال/g, '$1')
+    .replace(/\bal\s+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Extend this with the spellings your clients actually use
+const LOCATION_ALIASES: string[][] = [
+  ['achrafieh', 'ashrafieh', 'ashrafiyeh', 'اشرفيه'],
+  ['ras beirut', 'راس بيروت'],
+  ['musaitbeh', 'musaytbeh', 'mousaitbeh', 'mosaitbeh', 'مصيطبه'],
+  ['mazraa', 'mazraa', 'مزرعه'],
+  ['hamra', 'حمرا'],
+  ['verdun', 'فردان'],
+  ['metn', 'matn', 'متن'],
+];
+
+function expandLocation(q: string): string[] {
+  const n = norm(q);
+  const out = new Set<string>([n]);
+  for (const group of LOCATION_ALIASES) {
+    if (group.some((g) => n.includes(norm(g)) || norm(g).includes(n))) {
+      group.forEach((g) => out.add(norm(g)));
+    }
+  }
+  return [...out].filter(Boolean);
+}
+
+const TYPE_SYNONYMS: Record<string, string> = { flat: 'apartment', شقه: 'apartment' };
+
+app.post('/api/agent/search-properties', apiRateLimiter, requireAgentKey, (req: Request, res: Response) => {
+  const b = req.body || {};
+  const limit = Math.min(Math.max(Number(b.limit) || 3, 1), 5);
+  let results = propertyListCache.filter((p) => !p.isArchived);
+
+  if (b.saleOrRental) {
+    const s = norm(b.saleOrRental);
+    const wantRental = ['rent', 'rental', 'ايجار', 'اجار'].includes(s);
+    const wantSale = ['sale', 'buy', 'بيع', 'شراء'].includes(s);
+    if (wantRental) results = results.filter((p) => p.isRental === true);
+    else if (wantSale) results = results.filter((p) => !p.isRental);
+  }
+
+  if (b.location && String(b.location).trim()) {
+    const variants = expandLocation(String(b.location));
+    results = results.filter((p) => {
+      const hay = norm(
+        [p.location, p.locationAr, p.district, p.districtAr, p.neighborhood, p.neighborhoodAr, p.zone, p.zoneAr].join(' | ')
+      );
+      return variants.some((v) => hay.includes(v));
+    });
+  }
+
+  if (b.propertyType && String(b.propertyType).trim()) {
+    let t = norm(b.propertyType);
+    t = TYPE_SYNONYMS[t] || t;
+    results = results.filter((p) =>
+      norm([p.type, p.typeAr, p.commercialSubtype, p.category].join(' ')).includes(t)
+    );
+  }
+
+  if (b.minBeds) results = results.filter((p) => (p.beds ?? 0) >= Number(b.minBeds));
+  if (b.minPrice) results = results.filter((p) => p.price >= Number(b.minPrice));
+  if (b.maxPrice) results = results.filter((p) => p.price <= Number(b.maxPrice));
+
+  results.sort((a, c) => Number(!!c.isFeatured) - Number(!!a.isFeatured) || a.price - c.price);
+
+  res.json({
+    total: results.length,
+    results: results.slice(0, limit).map((p) => ({
+      referenceNo: p.referenceNo,
+      title: p.title,
+      titleAr: p.titleAr,
+      location: `${p.neighborhood}, ${p.district}`,
+      locationAr: `${p.neighborhoodAr}، ${p.districtAr}`,
+      forRent: !!p.isRental,
+      price: p.price,
+      currency: p.currency || 'USD',
+      beds: p.beds,
+      baths: p.baths,
+      areaSqm: p.areaSqm,
+      buildingAge: p.buildingAgeLabel,
+      furnished: p.furnished,
+    })),
+    note:
+      results.length === 0
+        ? 'No matching listing. Offer to take the client details so an agent follows up.'
+        : undefined,
+  });
+});
+
+async function notifyAgent(text: string) {
+  console.log('[Agent Notify]', text);
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text }),
+    });
+  } catch (err) {
+    console.error('Notify failed', err);
+  }
+}
+
+app.post('/api/agent/book-viewing', apiRateLimiter, requireAgentKey, async (req: Request, res: Response) => {
+  const { name, phone, referenceNo, preferredTime, notes } = req.body || {};
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!name || String(name).trim().length < 2 || digits.length < 7) {
+    return res.status(400).json({ error: 'Valid name and phone number are required.' });
+  }
+
+  const property = referenceNo
+    ? propertyListCache.find((p) => p.referenceNo === String(referenceNo))
+    : undefined;
+
+  const lead = {
+    id: `lead-${Date.now()}`,
+    type: property ? 'viewing' : 'callback',
+    name: String(name).trim(),
+    phone: digits,
+    referenceNo: property?.referenceNo || null,
+    propertyTitle: property?.title || null,
+    preferredTime: String(preferredTime || '').slice(0, 100),
+    notes: String(notes || '').slice(0, 500),
+    source: 'voice-agent',
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    const existing = fs.existsSync(LEADS_FILE) ? JSON.parse(fs.readFileSync(LEADS_FILE, 'utf-8')) : [];
+    existing.push(lead);
+    fs.writeFileSync(LEADS_FILE, JSON.stringify(existing, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Failed to save lead', err);
+  }
+
+  await notifyAgent(
+    `🏠 طلب جديد (${lead.type})\n` +
+      `الاسم: ${lead.name}\nالرقم: +${lead.phone}\n` +
+      `العقار: ${lead.referenceNo || 'عام'} ${lead.propertyTitle || ''}\n` +
+      `الوقت المطلوب: ${lead.preferredTime || '-'}\nملاحظات: ${lead.notes || '-'}\n` +
+      `واتساب: https://wa.me/${lead.phone}`
+  );
+
+  res.json({ success: true, message: 'Request recorded. An agent will contact the client.' });
+});
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'healthy',
