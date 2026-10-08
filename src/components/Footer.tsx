@@ -128,7 +128,7 @@ export const Footer: React.FC<FooterProps> = ({ lang = 'en', onNavigate, onOpenA
             {/* Code Titans - Clean & Visible Signature */}
             <div className="flex items-center gap-1 text-white/50 hover:text-white/90 transition-colors font-normal">
               <span className="text-[11px] text-white/70">Developed by</span>
-              <span className="text-[10px] font-medium"><a href="https://www.instagram.com/code_titans0" target="_blank" rel="noopener noreferrer" className="hover:underline">Nadine Yazbik &amp; Hasan Fares (Code Titans)</a></span>
+              <span className="text-[10px] font-medium"><a href="https://www.instagram.com/code_titans0" target="_blank" rel="noopener noreferrer" className="hover:underline">Code Titans</a></span>
             </div>
           </div>
         </div>
