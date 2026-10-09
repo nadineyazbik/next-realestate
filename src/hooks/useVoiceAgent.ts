@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 
 export function useVoiceAgent(isOpen: boolean) {
   const [callState, setCallState] = useState<'idle' | 'listening' | 'thinking' | 'speaking'>('idle');
@@ -8,18 +8,20 @@ export function useVoiceAgent(isOpen: boolean) {
 
   const startListening = () => {
     setError(null);
-    setUserText('');
+    setUserText('أريد شقة فخمة في بيروت');
     setCallState('listening');
     setTranscript('عم بسمع طلبك العقاري...');
 
     setTimeout(() => {
-      setCallState('speaking');
-      setTranscript('أهلاً فيكِ! عنا أحلى الشقق والفلل ببيروت وكسروان، تبدأ الأسعار من 150 ألف دولار. تحبِ نفلتر لك النتائج؟');
-    }, 1200);
+      setCallState('thinking');
+      setTranscript('جاري البحث في قاعدة البيانات...');
+    }, 900);
 
     setTimeout(() => {
+      setCallState('speaking');
+      setTranscript('أهلاً فيكِ! عنا أحلى الشقق والفلل ببيروت وكسروان، تبدأ الأسعار من 150 ألف دولار. تحبِ نفلتر لك النتائج حسب المنطقة؟');
       setCallState('idle');
-    }, 3500);
+    }, 2000);
   };
 
   const stopAll = () => {
