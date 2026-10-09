@@ -29,10 +29,9 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'home' | 'all_properties' | 'property_details'>('home');
   const [allPropertiesInitialCat, setAllPropertiesInitialCat] = useState<string>('all');
 
-  // Real Web Speech API States for Interactive Voice Call
-  const [isListening, setIsListening] = useState<boolean>(false);
-  const [voiceTranscript, setVoiceTranscript] = useState<string>('أهلاً بك! أنا نادين، اضغط على زر (تحدث) وبسمعك فوراً.');
-  const [userSpokenText, setUserSpokenText] = useState<string>('');
+  // Interactive Demo Voice Call States
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [voiceTranscript, setVoiceTranscript] = useState<string>('أهلاً فيك! أنا نادين، مستشارتك العقارية. كيف فيني أساعدك اليوم؟ اضغط على (تحدث) لنبدا!');
   const [callDuration, setCallDuration] = useState<number>(0);
 
   // Google OAuth User Session & Wishlist Favorites
@@ -95,81 +94,15 @@ export default function App() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Text-to-Speech function for Nadine's voice response
-  const speakNadineResponse = (text: string) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // Stop any ongoing speech
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'ar-LB'; // Lebanese / Arabic voice
-      utterance.rate = 1.0;
-      utterance.pitch = 1.1; // Friendly female pitch
-      window.speechSynthesis.speak(utterance);
-    }
-  };
-
-  // True Browser Speech Recognition (Free, native mic integration)
-  const handleStartListening = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  // Instant Interactive Demo Response (Lebanese Dialect AI Simulation)
+  const handleInteractiveTalk = () => {
+    setIsSpeaking(true);
+    setVoiceTranscript('عم بسمع طلبك العقاري...');
     
-    if (!SpeechRecognition) {
-      // Fallback simulation if browser doesn't support Speech API directly
-      setIsListening(true);
-      setUserSpokenText('أريد شقة في بيروت');
-      setVoiceTranscript('عم بسمع طلبك...');
-      setTimeout(() => {
-        setIsListening(false);
-        const reply = 'أهلاً فيك! عنا شقق فخمة ببيروت تبدأ من 150 ألف دولار، تحب تشوفها؟';
-        setVoiceTranscript(reply);
-        speakNadineResponse(reply);
-      }, 2000);
-      return;
-    }
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'ar-LB'; // Listen in Lebanese/Arabic
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => {
-        setIsListening(true);
-        setUserSpokenText('جارٍ الاستماع لصوتك...');
-      };
-
-      recognition.onresult = (event: any) => {
-        const speechText = event.results[0][0].transcript;
-        setUserSpokenText(`أنت قلت: "${speechText}"`);
-        setIsListening(false);
-
-        // Smart Lebanese AI response based on keywords
-        let reply = 'أهلاً فيك! كيف فيني أساعدك باختيار العقار المناسب بلبنان؟';
-        const lower = speechText.toLowerCase();
-        if (lower.includes('شقة') || lower.includes('apartment') || lower.includes('بيروت')) {
-          reply = 'عنا أحلى الشقق ببيروت وكسروان مع إطلالة بحرية فخمة، الأسعار بتبلش من 150 ألف دولار.';
-        } else if (lower.includes('إيجار') || lower.includes('rent'))  {
-          reply = 'متوفر عنا شقق للإيجار الشهري والسنوي بمناطق راقية ومجهزة بالكامل.';
-        } else {
-          reply = 'فهمت عليك تماماً! فينا نفلتر لك العقارات حسب المساحة والموقع اللي بتناسبك.';
-        }
-
-        setVoiceTranscript(reply);
-        speakNadineResponse(reply);
-      };
-
-      recognition.onerror = () => {
-        setIsListening(false);
-        setUserSpokenText('عذراً، لم أسمع الصوت جيداً. حاول مرة أخرى.');
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognition.start();
-    } catch (e) {
-      setIsListening(false);
-      setVoiceTranscript('أهلاً فيك! عنا شقق فخمة ببيروت وكسروان تبدأ من 150 ألف دولار.');
-    }
+    setTimeout(() => {
+      setIsSpeaking(false);
+      setVoiceTranscript('أهلاً فيك! عنا أحلى الشقق والفلل ببيروت وكسروان وجبل لبنان، بتبدأ الأسعار من 150 ألف دولار. تحب نفلتر لك النتائج حسب المنطقة؟');
+    }, 1500);
   };
 
   // Synchronize high-concurrency property listings from backend API
@@ -525,7 +458,7 @@ export default function App() {
         </button>
       </div>
 
-      {/* --- نافذة الاتصال الصوتي العائمة مع دعم الميكروفون والصوت الحقيقي --- */}
+      {/* --- نافذة المكالمة التفاعلية الفورية (Interactive Demo Mode) --- */}
       {callModalOpen && (
         <div className="fixed bottom-24 right-6 z-[10000] w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col animate-in slide-in-from-bottom-8 duration-200">
           
@@ -543,10 +476,7 @@ export default function App() {
               </div>
             </div>
             <button 
-              onClick={() => {
-                if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-                setCallModalOpen(false);
-              }}
+              onClick={() => setCallModalOpen(false)}
               className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
@@ -568,17 +498,10 @@ export default function App() {
               </div>
             </div>
 
-            <h2 className="text-sm font-bold text-gray-900 mb-0.5">Nadine (Live Voice)</h2>
-            <p className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full mb-2 border border-emerald-100">
-              Lebanese Dialect • Mic Active
+            <h2 className="text-sm font-bold text-gray-900 mb-0.5">Nadine (Voice AI)</h2>
+            <p className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full mb-3 border border-emerald-100">
+              Lebanese Dialect • Demo Ready
             </p>
-
-            {/* User spoken text display */}
-            {userSpokenText && (
-              <p className="text-[11px] text-gray-500 italic mb-1.5 px-2 bg-gray-100 py-1 rounded-lg w-full">
-                {userSpokenText}
-              </p>
-            )}
 
             {/* Live Transcript Bubble */}
             <div className="w-full bg-emerald-50/80 border border-emerald-100 rounded-2xl p-3 mb-4 text-right">
@@ -593,32 +516,29 @@ export default function App() {
 
             {/* Status / Live audio wave simulation */}
             <div className="flex items-center justify-center gap-1 mb-4 h-5">
-              <span className={`w-1 h-3 bg-[#0a3633] rounded-full ${isListening ? 'animate-bounce' : 'animate-pulse'}`}></span>
-              <span className={`w-1 h-6 bg-[#0a3633] rounded-full ${isListening ? 'animate-bounce delay-75' : 'animate-pulse delay-75'}`}></span>
-              <span className={`w-1 h-4 bg-[#0a3633] rounded-full ${isListening ? 'animate-bounce delay-150' : 'animate-pulse delay-150'}`}></span>
+              <span className={`w-1 h-3 bg-[#0a3633] rounded-full ${isSpeaking ? 'animate-bounce' : 'animate-pulse'}`}></span>
+              <span className={`w-1 h-6 bg-[#0a3633] rounded-full ${isSpeaking ? 'animate-bounce delay-75' : 'animate-pulse delay-75'}`}></span>
+              <span className={`w-1 h-4 bg-[#0a3633] rounded-full ${isSpeaking ? 'animate-bounce delay-150' : 'animate-pulse delay-150'}`}></span>
               <span className="text-[11px] font-semibold text-emerald-700 ml-2">
-                {isListening ? 'Listening...' : formatTime(callDuration)}
+                {isSpeaking ? 'Speaking...' : formatTime(callDuration)}
               </span>
             </div>
 
             {/* Action Buttons */}
             <div className="flex items-center gap-3">
               <button 
-                onClick={handleStartListening}
+                onClick={handleInteractiveTalk}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold shadow-md transition-all cursor-pointer ${
-                  isListening ? 'bg-amber-500 text-white animate-pulse' : 'bg-[#0a3633] hover:bg-[#0a3633]/90 text-white'
+                  isSpeaking ? 'bg-amber-500 text-white animate-pulse' : 'bg-[#0a3633] hover:bg-[#0a3633]/90 text-white'
                 }`}
-                title="Speak to Nadine"
+                title="Talk to Nadine"
               >
                 <Mic className="w-4 h-4" />
-                <span>{isListening ? 'Listening...' : 'Talk (تحدث)'}</span>
+                <span>{isSpeaking ? 'Speaking...' : 'Talk (تحدث)'}</span>
               </button>
 
               <button 
-                onClick={() => {
-                  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-                  setCallModalOpen(false);
-                }}
+                onClick={() => setCallModalOpen(false)}
                 className="w-10 h-10 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-md hover:scale-105 transition-all cursor-pointer"
                 title="End Call"
               >
