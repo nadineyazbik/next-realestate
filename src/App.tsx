@@ -68,18 +68,6 @@ export default function App() {
     document.documentElement.lang = lang;
   }, [isArabic, lang]);
 
-  // Load ElevenLabs Widget Script automatically
-  useEffect(() => {
-    const scriptId = 'elevenlabs-convai-script';
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.src = 'https://elevenlabs.io/convai-widget/index.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, []);
-
   // Synchronize high-concurrency property listings from backend API
   useEffect(() => {
     fetch('/api/properties')
@@ -425,15 +413,22 @@ export default function App() {
 
       <Footer lang={lang} onNavigate={handleNavigation} onOpenAdminPortal={() => setAdminPortalOpen(true)} />
 
-      {/* --- زر الاتصال العائم لتفعيل نادين الذكية داخل الموقع مباشرة --- */}
+      {/* --- زر الاتصال العائم الفخم لمكالمة نادين الصوتية --- */}
       <div className="fixed bottom-6 right-6 z-[9999]">
         <button
           onClick={() => {
-            // فتح نافذة مساعدة نادين الذكية الموجودة أصلاً في المشروع لتكون التجربة داخلية 100%
-            setAiAssistantOpen(true);
+            const width = 420;
+            const height = 650;
+            const left = (window.innerWidth - width) / 2;
+            const top = (window.innerHeight - height) / 2;
+            window.open(
+              'https://elevenlabs.io/app/talk-to?agent_id=agent_0301m4dgyp7kftq9b2kwawvv836p',
+              'NadineVoiceCall',
+              `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes`
+            );
           }}
           className="flex items-center justify-center w-16 h-16 bg-[#0a3633] text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 border-2 border-white/30 cursor-pointer animate-bounce group relative"
-          title="Talk to Nadine"
+          title="Talk with Nadine"
         >
           <Phone className="w-7 h-7 text-white group-hover:rotate-12 transition-transform" />
           <span className="absolute -inset-1 rounded-full bg-[#0a3633] opacity-30 animate-ping pointer-events-none"></span>
