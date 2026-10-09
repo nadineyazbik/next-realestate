@@ -29,9 +29,9 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'home' | 'all_properties' | 'property_details'>('home');
   const [allPropertiesInitialCat, setAllPropertiesInitialCat] = useState<string>('all');
 
-  // Interactive Demo Voice Call States
-  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
-  const [voiceTranscript, setVoiceTranscript] = useState<string>('أهلاً فيك! أنا نادين، مستشارتك العقارية. كيف فيني أساعدك اليوم؟ اضغط على (تحدث) لنبدا!');
+  // Smooth Interactive Demo Voice Call States
+  const [callState, setCallState] = useState<'idle' | 'listening' | 'speaking'>('idle');
+  const [voiceTranscript, setVoiceTranscript] = useState<string>('أهلاً فيك! أنا نادين، مستشارتك العقارية. اضغط على زر (تحدث) لنبدأ المحادثة.');
   const [callDuration, setCallDuration] = useState<number>(0);
 
   // Google OAuth User Session & Wishlist Favorites
@@ -79,6 +79,8 @@ export default function App() {
     let timer: any;
     if (callModalOpen) {
       setCallDuration(0);
+      setCallState('idle');
+      setVoiceTranscript('أهلاً فيك! أنا نادين، مستشارتك العقارية. اضغط على زر (تحدث) لنبدأ المحادثة.');
       timer = setInterval(() => {
         setCallDuration((prev) => prev + 1);
       }, 1000);
@@ -94,15 +96,25 @@ export default function App() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Instant Interactive Demo Response (Lebanese Dialect AI Simulation)
+  // Flawless Interactive Demo Response Loop
   const handleInteractiveTalk = () => {
-    setIsSpeaking(true);
+    if (callState === 'listening' || callState === 'speaking') return;
+
+    setCallState('listening');
     setVoiceTranscript('عم بسمع طلبك العقاري...');
-    
+
     setTimeout(() => {
-      setIsSpeaking(false);
-      setVoiceTranscript('أهلاً فيك! عنا أحلى الشقق والفلل ببيروت وكسروان وجبل لبنان، بتبدأ الأسعار من 150 ألف دولار. تحب نفلتر لك النتائج حسب المنطقة؟');
-    }, 1500);
+      setCallState('speaking');
+      setVoiceTranscript('أهلاً فيك! عنا أحلى الشقق والفخمة ببيروت وكسروان وجبل لبنان، تبدأ الأسعار من 150 ألف دولار. تحب نفلتر لك النتائج حسب المنطقة؟');
+      
+      // Optional browser speech synthesis if supported
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance('أهلاً فيك! عنا أحلى الشقق ببيروت وكسروان، تبدأ من 150 ألف دولار.');
+        utterance.lang = 'ar-AR';
+        window.speechSynthesis.speak(utterance);
+      }
+    }, 1200);
   };
 
   // Synchronize high-concurrency property listings from backend API
@@ -504,7 +516,7 @@ export default function App() {
             </p>
 
             {/* Live Transcript Bubble */}
-            <div className="w-full bg-emerald-50/80 border border-emerald-100 rounded-2xl p-3 mb-4 text-right">
+            <div className="w-full bg-emerald-50/80 border border-emerald-100 rounded-2xl p-3 mb-4 text-right min-h-[90px] flex flex-col justify-center">
               <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 font-bold mb-1">
                 <Volume2 className="w-3.5 h-3.5 animate-pulse text-[#0a3633]" />
                 <span>Nadine says:</span>
@@ -516,11 +528,11 @@ export default function App() {
 
             {/* Status / Live audio wave simulation */}
             <div className="flex items-center justify-center gap-1 mb-4 h-5">
-              <span className={`w-1 h-3 bg-[#0a3633] rounded-full ${isSpeaking ? 'animate-bounce' : 'animate-pulse'}`}></span>
-              <span className={`w-1 h-6 bg-[#0a3633] rounded-full ${isSpeaking ? 'animate-bounce delay-75' : 'animate-pulse delay-75'}`}></span>
-              <span className={`w-1 h-4 bg-[#0a3633] rounded-full ${isSpeaking ? 'animate-bounce delay-150' : 'animate-pulse delay-150'}`}></span>
+              <span className={`w-1 h-3 bg-[#0a3633] rounded-full ${callState !== 'idle' ? 'animate-bounce' : 'animate-pulse'}`}></span>
+              <span className={`w-1 h-6 bg-[#0a3633] rounded-full ${callState !== 'idle' ? 'animate-bounce delay-75' : 'animate-pulse delay-75'}`}></span>
+              <span className={`w-1 h-4 bg-[#0a3633] rounded-full ${callState !== 'idle' ? 'animate-bounce delay-150' : 'animate-pulse delay-150'}`}></span>
               <span className="text-[11px] font-semibold text-emerald-700 ml-2">
-                {isSpeaking ? 'Speaking...' : formatTime(callDuration)}
+                {callState === 'listening' ? 'Listening...' : callState === 'speaking' ? 'Speaking Lebanese...' : formatTime(callDuration)}
               </span>
             </div>
 
@@ -529,12 +541,12 @@ export default function App() {
               <button 
                 onClick={handleInteractiveTalk}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold shadow-md transition-all cursor-pointer ${
-                  isSpeaking ? 'bg-amber-500 text-white animate-pulse' : 'bg-[#0a3633] hover:bg-[#0a3633]/90 text-white'
+                  callState !== 'idle' ? 'bg-amber-500 text-white animate-pulse' : 'bg-[#0a3633] hover:bg-[#0a3633]/90 text-white'
                 }`}
                 title="Talk to Nadine"
               >
                 <Mic className="w-4 h-4" />
-                <span>{isSpeaking ? 'Speaking...' : 'Talk (تحدث)'}</span>
+                <span>{callState === 'listening' ? 'Listening...' : callState === 'speaking' ? 'Speaking...' : 'Talk (تحدث)'}</span>
               </button>
 
               <button 
