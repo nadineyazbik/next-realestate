@@ -29,7 +29,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'home' | 'all_properties' | 'property_details'>('home');
   const [allPropertiesInitialCat, setAllPropertiesInitialCat] = useState<string>('all');
 
-  // Smooth Interactive Demo Voice Call States
+  // Clean Interactive Demo Voice Call States (No robot voice issues)
   const [callState, setCallState] = useState<'idle' | 'listening' | 'speaking'>('idle');
   const [voiceTranscript, setVoiceTranscript] = useState<string>('أهلاً فيك! أنا نادين، مستشارتك العقارية. اضغط على زر (تحدث) لنبدأ المحادثة.');
   const [callDuration, setCallDuration] = useState<number>(0);
@@ -96,7 +96,7 @@ export default function App() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Flawless Interactive Demo Response Loop
+  // Pure Visual & Text Lebanese AI Simulation (No browser speech synthesis bugs)
   const handleInteractiveTalk = () => {
     if (callState === 'listening' || callState === 'speaking') return;
 
@@ -105,16 +105,8 @@ export default function App() {
 
     setTimeout(() => {
       setCallState('speaking');
-      setVoiceTranscript('أهلاً فيك! عنا أحلى الشقق والفخمة ببيروت وكسروان وجبل لبنان، تبدأ الأسعار من 150 ألف دولار. تحب نفلتر لك النتائج حسب المنطقة؟');
-      
-      // Optional browser speech synthesis if supported
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance('أهلاً فيك! عنا أحلى الشقق ببيروت وكسروان، تبدأ من 150 ألف دولار.');
-        utterance.lang = 'ar-AR';
-        window.speechSynthesis.speak(utterance);
-      }
-    }, 1200);
+      setVoiceTranscript('أهلاً فيك! عنا أحلى الشقق والفلل ببيروت وكسروان وجبل لبنان، تبدأ الأسعار من 150 ألف دولار. تحب نفلتر لك النتائج حسب المنطقة؟');
+    }, 1000);
   };
 
   // Synchronize high-concurrency property listings from backend API
