@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React,5 useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { PopularCategories } from './components/PopularCategories';
@@ -15,7 +15,7 @@ import { AdminPortalModal } from './components/AdminPortalModal';
 import { Property, Language, SearchFilterState } from './types';
 import { mockProperties } from './data/properties';
 import { authService, GoogleUser } from './services/authService';
-import { X, MessageCircle, Phone, Sparkles } from 'lucide-react';
+import { X, MessageCircle, Phone, Sparkles, Mic, Volume2 } from 'lucide-react';
 
 export default function App() {
   const [lang, setLang] = useState<Language>('en');
@@ -29,12 +29,19 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'home' | 'all_properties' | 'property_details'>('home');
   const [allPropertiesInitialCat, setAllPropertiesInitialCat] = useState<string>('all');
 
+  // Voice Call States for Student / Client Demo
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const [voiceTranscript, setVoiceTranscript] = useState<string>('أهلاً بك! أنا نادين، كيف فيني أساعدك اليوم بالعقارات في لبنان؟');
+  const [callDuration, setCallDuration] = useState<number>(0);
+
+  // Google OAuth User Session & Wishlist Favorites
   const [currentUser, setCurrentUser] = useState<GoogleUser | null>(() => authService.getUser());
   const [favorites, setFavorites] = useState<string[]>(() => authService.getFavorites());
   const [googleSignInOpen, setGoogleSignInOpen] = useState<boolean>(false);
   const [favoritesDrawerOpen, setFavoritesDrawerOpen] = useState<boolean>(false);
   const [pendingFavoriteProp, setPendingFavoriteProp] = useState<Property | null>(null);
 
+  // Load custom properties added by admin, combined with initial mockProperties
   const [properties, setProperties] = useState<Property[]>(() => {
     try {
       const stored = localStorage.getItem('next_custom_properties');
@@ -61,11 +68,45 @@ export default function App() {
   const [filterNotification, setFilterNotification] = useState<string | null>(null);
   const isArabic = lang === 'ar';
 
+  // Keep html document dir and lang synchronized
   useEffect(() => {
     document.documentElement.dir = isArabic ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
   }, [isArabic, lang]);
 
+  // Call timer simulation
+  useEffect(() => {
+    let timer: any;
+    if (callModalOpen) {
+      setCallDuration(0);
+      timer = setInterval(() => {
+        setCallDuration((prev) => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(timer);
+    }
+    return () => clearInterval(timer);
+  }, [callModalOpen]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Interactive Voice Simulation for Student Demo
+  const handleStartListening = () => {
+    setIsListening(true);
+    setVoiceTranscript('عم بسمعك... تفضل اطرح طلبك العقاري.');
+    
+    // Simulate AI response in Lebanese Dialect after 2.5 seconds
+    setTimeout(() => {
+      setIsListening(false);
+      setVoiceTranscript('أهلاً فيك! عنا شقق فخمة ببيروت وكسروان تبدأ من 150 ألف دولار. تحب نفلتر لك النتائج حسب المنطقة؟');
+    }, 2500);
+  };
+
+  // Synchronize high-concurrency property listings from backend API
   useEffect(() => {
     fetch('/api/properties')
       .then((res) => (res.ok ? res.json() : null))
@@ -77,6 +118,7 @@ export default function App() {
       .catch(() => {});
   }, []);
 
+  // Synchronize hash routing with full page view
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
@@ -408,18 +450,16 @@ export default function App() {
       {/* --- زر الاتصال العائم الفخم في الزاوية (مثل الماسنجر) --- */}
       <div className="fixed bottom-6 right-6 z-[9999]">
         <button
-          onClick={() => {
-            setCallModalOpen(true);
-          }}
+          onClick={() => setCallModalOpen(true)}
           className="flex items-center justify-center w-16 h-16 bg-[#0a3633] text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 border-2 border-white/30 cursor-pointer animate-bounce group relative"
-          title="Talk with Nadine"
+          title="Talk with Nadine AI Voice"
         >
           <Phone className="w-7 h-7 text-white group-hover:rotate-12 transition-transform" />
           <span className="absolute -inset-1 rounded-full bg-[#0a3633] opacity-30 animate-ping pointer-events-none"></span>
         </button>
       </div>
 
-      {/* --- نافذة المكالمة العائمة المصغرة (Floating Widget) --- */}
+      {/* --- نافذة الاتصال الصوتي العائمة الذكية (Voice AI Simulation for Student Demo) --- */}
       {callModalOpen && (
         <div className="fixed bottom-24 right-6 z-[10000] w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col animate-in slide-in-from-bottom-8 duration-200">
           
@@ -432,7 +472,7 @@ export default function App() {
                 className="w-8 h-8 rounded-full object-cover border-2 border-white/40 shadow-sm"
               />
               <div>
-                <h3 className="font-bold text-xs">Talk to Next AI</h3>
+                <h3 className="font-bold text-xs">Live Voice AI Call</h3>
                 <p className="text-[10px] text-emerald-200">Nadine • Real Estate Advisor</p>
               </div>
             </div>
@@ -448,9 +488,9 @@ export default function App() {
           <div className="p-5 flex flex-col items-center justify-center text-center bg-gradient-to-b from-gray-50/50 to-white">
             
             {/* Avatar with glowing ring */}
-            <div className="relative mb-4">
+            <div className="relative mb-3">
               <div className="absolute -inset-2 rounded-full bg-emerald-500/20 animate-ping pointer-events-none"></div>
-              <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-[#0a3633] to-emerald-400 shadow-lg relative z-10">
+              <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-[#0a3633] to-emerald-400 shadow-lg relative z-10">
                 <img 
                   src="/WhatsApp Image 2026-10-08 at 3.13.06 PM.jpeg" 
                   alt="Nadine AI Advisor" 
@@ -459,36 +499,51 @@ export default function App() {
               </div>
             </div>
 
-            <h2 className="text-base font-bold text-gray-900 mb-0.5">Nadine</h2>
-            <p className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full mb-4 border border-emerald-100">
-              AI Real Estate Advisor • Lebanese Dialect
+            <h2 className="text-sm font-bold text-gray-900 mb-0.5">Nadine (AI Voice)</h2>
+            <p className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full mb-3 border border-emerald-100">
+              Lebanese Dialect • Live Connected
             </p>
 
+            {/* Live Transcript Bubble for Student Demo */}
+            <div className="w-full bg-emerald-50/80 border border-emerald-100 rounded-2xl p-3 mb-4 text-right">
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 font-bold mb-1">
+                <Volume2 className="w-3.5 h-3.5 animate-pulse text-[#0a3633]" />
+                <span>Nadine says:</span>
+              </div>
+              <p className="text-xs text-gray-700 font-medium leading-relaxed">
+                {voiceTranscript}
+              </p>
+            </div>
+
             {/* Status / Live audio wave simulation */}
-            <div className="flex items-center justify-center gap-1 mb-5 h-6">
-              <span className="w-1 h-3 bg-[#0a3633] animate-pulse rounded-full"></span>
-              <span className="w-1 h-6 bg-[#0a3633] animate-pulse rounded-full delay-75"></span>
-              <span className="w-1 h-4 bg-[#0a3633] animate-pulse rounded-full delay-150"></span>
-              <span className="w-1 h-5 bg-[#0a3633] animate-pulse rounded-full delay-100"></span>
-              <span className="text-[11px] font-semibold text-gray-500 ml-1.5">Connected</span>
+            <div className="flex items-center justify-center gap-1 mb-4 h-5">
+              <span className={`w-1 h-3 bg-[#0a3633] rounded-full ${isListening ? 'animate-bounce' : 'animate-pulse'}`}></span>
+              <span className={`w-1 h-6 bg-[#0a3633] rounded-full ${isListening ? 'animate-bounce delay-75' : 'animate-pulse delay-75'}`}></span>
+              <span className={`w-1 h-4 bg-[#0a3633] rounded-full ${isListening ? 'animate-bounce delay-150' : 'animate-pulse delay-150'}`}></span>
+              <span className="text-[11px] font-semibold text-emerald-700 ml-2">
+                {isListening ? 'Listening...' : formatTime(callDuration)}
+              </span>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <button 
-                onClick={() => alert(isArabic ? 'تم كتم الصوت' : 'Muted')}
-                className="w-11 h-11 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center shadow-sm transition-all cursor-pointer"
-                title="Mute"
+                onClick={handleStartListening}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold shadow-md transition-all cursor-pointer ${
+                  isListening ? 'bg-amber-500 text-white animate-pulse' : 'bg-[#0a3633] hover:bg-[#0a3633]/90 text-white'
+                }`}
+                title="Speak to Nadine"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                <Mic className="w-4 h-4" />
+                <span>{isListening ? 'Listening...' : 'Talk (تحدث)'}</span>
               </button>
 
               <button 
                 onClick={() => setCallModalOpen(false)}
-                className="w-12 h-12 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-md hover:scale-105 transition-all cursor-pointer"
+                className="w-10 h-10 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-md hover:scale-105 transition-all cursor-pointer"
                 title="End Call"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
