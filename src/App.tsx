@@ -25,6 +25,7 @@ export default function App() {
   const [addPropertyModalOpen, setAddPropertyModalOpen] = useState<boolean>(false);
   const [aiAssistantOpen, setAiAssistantOpen] = useState<boolean>(false);
   const [adminPortalOpen, setAdminPortalOpen] = useState<boolean>(false);
+  const [callModalOpen, setCallModalOpen] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<'home' | 'all_properties' | 'property_details'>('home');
   const [allPropertiesInitialCat, setAllPropertiesInitialCat] = useState<string>('all');
 
@@ -413,19 +414,11 @@ export default function App() {
 
       <Footer lang={lang} onNavigate={handleNavigation} onOpenAdminPortal={() => setAdminPortalOpen(true)} />
 
-      {/* --- زر الاتصال العائم الفخم لمكالمة نادين الصوتية --- */}
+      {/* --- زر الاتصال العائم الفخم لتشغيل المكالمة الداخلية --- */}
       <div className="fixed bottom-6 right-6 z-[9999]">
         <button
           onClick={() => {
-            const width = 420;
-            const height = 650;
-            const left = (window.innerWidth - width) / 2;
-            const top = (window.innerHeight - height) / 2;
-            window.open(
-              'https://elevenlabs.io/app/talk-to?agent_id=agent_0301m4dgyp7kftq9b2kwawvv836p',
-              'NadineVoiceCall',
-              `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes`
-            );
+            setCallModalOpen(true);
           }}
           className="flex items-center justify-center w-16 h-16 bg-[#0a3633] text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 border-2 border-white/30 cursor-pointer animate-bounce group relative"
           title="Talk with Nadine"
@@ -434,6 +427,94 @@ export default function App() {
           <span className="absolute -inset-1 rounded-full bg-[#0a3633] opacity-30 animate-ping pointer-events-none"></span>
         </button>
       </div>
+
+      {/* --- نافذة المكالمة الصوتية الداخلية بصورة نادين الفعلية من مجلد الـ public --- */}
+      {callModalOpen && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col">
+            
+            {/* Header */}
+            <div className="bg-[#0a3633] text-white px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img 
+                  src="/WhatsApp Image 2026-10-08 at 3.13.06 PM.jpeg" 
+                  alt="Nadine" 
+                  className="w-10 h-10 rounded-full object-cover border-2 border-white/40 shadow-md"
+                />
+                <div>
+                  <h3 className="font-bold text-sm">Talk to Next AI</h3>
+                  <p className="text-xs text-emerald-200">Nadine • Real Estate Advisor</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setCallModalOpen(false)}
+                className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body / Calling Screen */}
+            <div className="p-8 flex flex-col items-center justify-center text-center bg-gradient-to-b from-gray-50/50 to-white">
+              
+              {/* Avatar with glowing ring - Using EXACT User Image from public */}
+              <div className="relative mb-6">
+                <div className="absolute -inset-3 rounded-full bg-emerald-500/20 animate-ping pointer-events-none"></div>
+                <div className="w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-[#0a3633] to-emerald-400 shadow-xl relative z-10">
+                  <img 
+                    src="/WhatsApp Image 2026-10-08 at 3.13.06 PM.jpeg" 
+                    alt="Nadine AI Advisor" 
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                </div>
+              </div>
+
+              <h2 className="text-xl font-bold text-gray-900 mb-1">Nadine</h2>
+              <p className="text-xs font-medium text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full mb-6 border border-emerald-100">
+                AI Support Agent • اللهجة اللبنانية
+              </p>
+
+              {/* Status / Live audio wave simulation */}
+              <div className="flex items-center justify-center gap-1.5 mb-8 h-8">
+                <span className="w-1 h-4 bg-[#0a3633] animate-pulse rounded-full"></span>
+                <span className="w-1 h-8 bg-[#0a3633] animate-pulse rounded-full delay-75"></span>
+                <span className="w-1 h-5 bg-[#0a3633] animate-pulse rounded-full delay-150"></span>
+                <span className="w-1 h-7 bg-[#0a3633] animate-pulse rounded-full delay-100"></span>
+                <span className="w-1 h-3 bg-[#0a3633] animate-pulse rounded-full"></span>
+                <span className="text-xs font-semibold text-gray-500 ml-2">Connected (Lebanon AI)</span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-6">
+                <button 
+                  onClick={() => alert(isArabic ? 'تم كتم الصوت' : 'Muted')}
+                  className="w-14 h-14 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center shadow-md transition-all cursor-pointer"
+                  title="Mute"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                </button>
+
+                <button 
+                  onClick={() => setCallModalOpen(false)}
+                  className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-xl hover:scale-105 transition-all cursor-pointer"
+                  title="End Call"
+                >
+                  <X className="w-8 h-8" />
+                </button>
+              </div>
+
+            </div>
+
+            {/* Footer branding */}
+            <div className="bg-gray-50 px-6 py-3 border-t border-gray-100 text-center">
+              <p className="text-[11px] text-gray-400 font-medium">
+                Powered by <span className="text-[#0a3633] font-semibold">Next Real Estate AI</span>
+              </p>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       <GoogleSignInModal
         isOpen={googleSignInOpen}
