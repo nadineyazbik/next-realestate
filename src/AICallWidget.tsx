@@ -1,6 +1,5 @@
-import React from 'react';
-import { useVoiceAgent } from './hooks/useVoiceAgent';
-import { X, Mic, PhoneOff } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { X, Mic } from 'lucide-react';
 
 interface AICallWidgetProps {
   isOpen: boolean;
@@ -8,7 +7,15 @@ interface AICallWidgetProps {
 }
 
 export const AICallWidget: React.FC<AICallWidgetProps> = ({ isOpen, onClose }) => {
-  const { callState, transcript, userText, error, startListening, stopAll } = useVoiceAgent();
+  useEffect(() => {
+    if (isOpen) {
+      // إرسال أمر تشغيل المكالمة لـ ElevenLabs فور فتح المودال
+      const widget = document.querySelector('elevenlabs-convai');
+      if (widget && (widget as any).startConversation) {
+        (widget as any).startConversation();
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -32,7 +39,7 @@ export const AICallWidget: React.FC<AICallWidgetProps> = ({ isOpen, onClose }) =
             </div>
           </div>
           <button 
-            onClick={() => { stopAll(); onClose(); }}
+            onClick={onClose}
             className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
           >
             <X className="w-6 h-6" />
@@ -42,11 +49,9 @@ export const AICallWidget: React.FC<AICallWidgetProps> = ({ isOpen, onClose }) =
         {/* Body - الصورة الشخصية والهوية */}
         <div className="p-6 flex flex-col items-center justify-center text-center bg-gradient-to-b from-gray-50/50 to-white">
           
-          {/* الصورة الدائرية لنادين بمنتصف المودال مع الهالة المضيئة */}
+          {/* الصورة الدائرية لنادين بمنتصف المودال */}
           <div className="relative mb-4">
-            <div className={`w-36 h-36 rounded-full p-1.5 bg-emerald-100 transition-all duration-300 ${
-              callState === 'speaking' || callState === 'listening' ? 'ring-4 ring-emerald-400 ring-offset-2 animate-pulse' : ''
-            }`}>
+            <div className="w-36 h-36 rounded-full p-1.5 bg-emerald-100 ring-4 ring-emerald-400 ring-offset-2 animate-pulse">
               <img 
                 src="/WhatsApp Image 2026-10-08 at 3.13.06 PM.jpeg" 
                 alt="Nadine" 
@@ -60,52 +65,24 @@ export const AICallWidget: React.FC<AICallWidgetProps> = ({ isOpen, onClose }) =
             Lebanese Dialect • Live
           </span>
 
-          {/* صندوق الرسائل والموجات الحية */}
-          <div className="w-full bg-emerald-50/60 rounded-2xl p-4 border border-emerald-100/80 mb-6 text-right dir-rtl">
-            <div className="flex items-center gap-2 mb-2 text-emerald-800 text-xs font-bold">
+          {/* صندوق الرسائل والإرشاد */}
+          <div className="w-full bg-emerald-50/60 rounded-2xl p-4 border border-emerald-100/80 mb-6 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2 text-emerald-800 text-xs font-bold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-              <span>نادين وتقول:</span>
+              <span>المكالمة الصوتية المباشرة مع نادين نشطة</span>
             </div>
-            <p className="text-sm font-medium text-gray-700 leading-relaxed min-h-[40px]">
-              {transcript}
+            <p className="text-sm font-medium text-gray-700 leading-relaxed">
+              احكي مع نادين مباشرة بالصوت لتساعدك بتصفية وحجز عقاراتك في لبنان.
             </p>
-            {userText && (
-              <p className="text-xs text-gray-400 mt-2 border-t border-emerald-100 pt-2">
-                أنتِ: {userText}
-              </p>
-            )}
           </div>
 
-          {/* الأخطاء إن وجدت */}
-          {error && (
-            <div className="text-xs text-red-500 bg-red-50 p-2.5 rounded-lg mb-4 w-full">
-              {error}
-            </div>
-          )}
-
-          {/* أزرار التحكم بالتحدث والإغلاق */}
-          <div className="flex items-center justify-center gap-4 w-full">
-            <button
-              onClick={startListening}
-              disabled={callState === 'listening' || callState === 'thinking'}
-              className={`flex-1 py-3.5 px-6 rounded-full font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all ${
-                callState === 'listening'
-                  ? 'bg-amber-500 text-white animate-pulse'
-                  : 'bg-[#0b3c35] text-white hover:bg-[#082e29] active:scale-95'
-              }`}
-            >
-              <Mic className="w-4 h-4" />
-              <span>{callState === 'listening' ? 'عم بسمعك...' : 'Talk (تحدث)'}</span>
-            </button>
-
-            <button
-              onClick={() => { stopAll(); onClose(); }}
-              className="p-3.5 rounded-full bg-red-600 text-white hover:bg-red-700 active:scale-95 shadow-lg transition-all"
-              title="إنهاء المكالمة"
-            >
-              <PhoneOff className="w-5 h-5" />
-            </button>
-          </div>
+          {/* زر إنهاء المكالمة */}
+          <button
+            onClick={onClose}
+            className="w-full py-3.5 px-6 rounded-full font-bold text-sm bg-red-600 text-white hover:bg-red-700 active:scale-95 shadow-lg transition-all flex items-center justify-center gap-2"
+          >
+            <span>إنهاء المكالمة (End Call)</span>
+          </button>
 
         </div>
 
