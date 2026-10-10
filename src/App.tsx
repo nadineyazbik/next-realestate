@@ -452,8 +452,27 @@ export default function App() {
 
       <Footer lang={lang} onNavigate={handleNavigation} onOpenAdminPortal={() => setAdminPortalOpen(true)} />
 
-      {/* ElevenLabs Widget مع إخفاء الـ Widget الافتراضي تماماً واعتماد المودال المخصص */}
-      <div className="fixed bottom-6 right-6 z-[9999] hidden">
+      {/* زر عائم أنيق بأسفل اليمين يفتح مودال نادين المخصص عند الضغط عليه */}
+      <button
+        onClick={() => setAiAssistantOpen(true)}
+        className="fixed bottom-6 right-6 z-[9999] bg-[#0b3c35] text-white p-3.5 pr-5 rounded-full shadow-2xl flex items-center gap-3 hover:bg-[#082e29] transition-all duration-300 hover:scale-105 group border border-emerald-500/30"
+      >
+        <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-emerald-400">
+          <img 
+            src="/WhatsApp Image 2026-10-08 at 3.13.06 PM.jpeg" 
+            alt="Nadine" 
+            className="w-full h-full object-cover"
+          />
+          <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
+        </div>
+        <div className="text-left dir-ltr">
+          <div className="text-xs font-bold leading-tight">Need help?</div>
+          <div className="text-[11px] text-emerald-200 font-medium">Talk with Nadine AI</div>
+        </div>
+      </button>
+
+      {/* إخفاء سكريبت ElevenLabs الافتراضي كلياً */}
+      <div className="hidden">
         <elevenlabs-convai agent-id="agent_2301m4gtgwnkem3bwyghjcqt8sjs"></elevenlabs-convai>
       </div>
 
