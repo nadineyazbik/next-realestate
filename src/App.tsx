@@ -15,8 +15,7 @@ import { AdminPortalModal } from './components/AdminPortalModal';
 import { Property, Language, SearchFilterState } from './types';
 import { mockProperties } from './data/properties';
 import { authService, GoogleUser } from './services/authService';
-import { useVoiceAgent } from './hooks/useVoiceAgent';
-import { X, MessageCircle, Phone, Sparkles, Mic, Volume2 } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export default function App() {
   const [lang, setLang] = useState<Language>('en');
@@ -26,21 +25,8 @@ export default function App() {
   const [addPropertyModalOpen, setAddPropertyModalOpen] = useState<boolean>(false);
   const [aiAssistantOpen, setAiAssistantOpen] = useState<boolean>(false);
   const [adminPortalOpen, setAdminPortalOpen] = useState<boolean>(false);
-  const [callModalOpen, setCallModalOpen] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<'home' | 'all_properties' | 'property_details'>('home');
   const [allPropertiesInitialCat, setAllPropertiesInitialCat] = useState<string>('all');
-
-  const [callDuration, setCallDuration] = useState<number>(0);
-
-  // --- الصوت الحقيقي: سمع + تحدث + اتصال بالـ AI ---
-  const {
-    callState,
-    transcript: voiceTranscript,
-    userText,
-    error: voiceError,
-    startListening,
-    stopAll,
-  } = useVoiceAgent(callModalOpen);
 
   const [currentUser, setCurrentUser] = useState<GoogleUser | null>(() => authService.getUser());
   const [favorites, setFavorites] = useState<string[]>(() => authService.getFavorites());
@@ -74,32 +60,57 @@ export default function App() {
   const [filterNotification, setFilterNotification] = useState<string | null>(null);
   const isArabic = lang === 'ar';
 
+  // تحميل سكريبت ElevenLabs واستقبال أوامر نادين (Client Tools)
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = "https://elevenlabs.io/convai-widget/index.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    // الاستماع لأوامر نادين الصوتية وتطبيقها بالموقع والواتساب
+    const handleClientToolCall = (event: any) => {
+      const { toolName, parameters } = event.detail || {};
+
+      // 1. تصفية الشقق والتحكم بالواجهة
+      if (toolName === 'filter_properties') {
+        const { location, propertyType, action } = parameters || {};
+        handleApplyFilterFromAI({
+          location: location || '',
+          propertyType: propertyType || '',
+          saleOrRental: action || '',
+        });
+      }
+
+      // 2. إرسال موعد الحجز عبر الواتساب للإدارة
+      if (toolName === 'schedule_appointment') {
+        const { client_name, phone_number, property_details, appointment_date_time } = parameters || {};
+        const adminPhone = "96176743414"; // رقم إدارة Next Real Estate
+
+        const message = `🏢 *حجز موعد جديد عبر نادين (Next Real Estate)*\n\n` +
+                        `👤 *اسم الزبون:* ${client_name || 'غير محدد'}\n` +
+                        `📞 *رقم الهاتف:* ${phone_number || 'غير محدد'}\n` +
+                        `🏡 *العقار المطلوب:* ${property_details || 'غير محدد'}\n` +
+                        `📅 *الموعد المطلوب:* ${appointment_date_time || 'غير محدد'}`;
+
+        const whatsappUrl = `https://api.whatsapp.com/send?phone=${adminPhone}&text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+      }
+    };
+
+    window.addEventListener('elevenlabs-convai:call', handleClientToolCall);
+
+    return () => {
+      window.removeEventListener('elevenlabs-convai:call', handleClientToolCall);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     document.documentElement.dir = isArabic ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
   }, [isArabic, lang]);
-
-  useEffect(() => {
-    let timer: any;
-    if (callModalOpen) {
-      setCallDuration(0);
-      timer = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [callModalOpen]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const endCall = () => {
-    stopAll();
-    setCallModalOpen(false);
-  };
 
   useEffect(() => {
     fetch('/api/properties')
@@ -259,7 +270,7 @@ export default function App() {
     }
     setFilterNotification(
       isArabic
-        ? `تصفية موصى بها من المستشار الذكي: ${filterArgs.location || ''} ${
+        ? `تصفية موصى بها من المساعدة نادين: ${filterArgs.location || ''} ${
             filterArgs.propertyType || ''
           }`
         : `AI Recommended Filter: ${filterArgs.location || ''} ${filterArgs.propertyType || ''}`
@@ -440,140 +451,10 @@ export default function App() {
 
       <Footer lang={lang} onNavigate={handleNavigation} onOpenAdminPortal={() => setAdminPortalOpen(true)} />
 
-      {/* --- زر الاتصال العائم الفخم في الزاوية (مثل الماسنجر) --- */}
+      {/* --- زر Widget الرسمي لنادين من ElevenLabs --- */}
       <div className="fixed bottom-6 right-6 z-[9999]">
-        <button
-          onClick={() => setCallModalOpen(true)}
-          className="flex items-center justify-center w-16 h-16 bg-[#0a3633] text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 border-2 border-white/30 cursor-pointer animate-bounce group relative"
-          title="Talk with Nadine AI Voice"
-        >
-          <Phone className="w-7 h-7 text-white group-hover:rotate-12 transition-transform" />
-          <span className="absolute -inset-1 rounded-full bg-[#0a3633] opacity-30 animate-ping pointer-events-none"></span>
-        </button>
+        <elevenlabs-convai agent-id="agent_2301m4gtgwnkem3bwyghjcqt8sjs"></elevenlabs-convai>
       </div>
-
-      {/* --- نافذة المكالمة الصوتية --- */}
-      {callModalOpen && (
-        <div className="fixed bottom-24 right-6 z-[10000] w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col animate-in slide-in-from-bottom-8 duration-200">
-
-          {/* Header */}
-          <div className="bg-[#0a3633] text-white px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <img
-                src="/WhatsApp Image 2026-10-08 at 3.13.06 PM.jpeg"
-                alt="Nadine"
-                className="w-8 h-8 rounded-full object-cover border-2 border-white/40 shadow-sm"
-              />
-              <div>
-                <h3 className="font-bold text-xs">Live Voice AI Call</h3>
-                <p className="text-[10px] text-emerald-200">Nadine • Real Estate Advisor</p>
-              </div>
-            </div>
-            <button
-              onClick={endCall}
-              className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Body / Calling Screen */}
-          <div className="p-5 flex flex-col items-center justify-center text-center bg-gradient-to-b from-gray-50/50 to-white">
-
-            {/* Avatar with glowing ring */}
-            <div className="relative mb-3">
-              <div className="absolute -inset-2 rounded-full bg-emerald-500/20 animate-ping pointer-events-none"></div>
-              <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-[#0a3633] to-emerald-400 shadow-lg relative z-10">
-                <img
-                  src="/WhatsApp Image 2026-10-08 at 3.13.06 PM.jpeg"
-                  alt="Nadine AI Advisor"
-                  className="w-full h-full rounded-full object-cover"
-                />
-              </div>
-            </div>
-
-            <h2 className="text-sm font-bold text-gray-900 mb-0.5">Nadine (Voice AI)</h2>
-            <p className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full mb-3 border border-emerald-100">
-              Lebanese Dialect • Live
-            </p>
-
-            {/* Live Transcript Bubble */}
-            <div className="w-full bg-emerald-50/80 border border-emerald-100 rounded-2xl p-3 mb-4 text-right min-h-[90px] flex flex-col justify-center">
-              <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 font-bold mb-1">
-                <Volume2 className="w-3.5 h-3.5 animate-pulse text-[#0a3633]" />
-                <span>Nadine says:</span>
-              </div>
-              <p className="text-xs text-gray-700 font-medium leading-relaxed">
-                {voiceTranscript}
-              </p>
-              {userText && (
-                <p className="text-[11px] text-gray-500 mt-2 border-t border-emerald-100 pt-2">
-                  أنتِ: {userText}
-                </p>
-              )}
-              {voiceError && (
-                <p className="text-[11px] text-red-600 mt-2 font-medium">{voiceError}</p>
-              )}
-            </div>
-
-            {/* Status / Live audio wave */}
-            <div className="flex items-center justify-center gap-1 mb-4 h-5">
-              <span className={`w-1 h-3 bg-[#0a3633] rounded-full ${callState !== 'idle' ? 'animate-bounce' : 'animate-pulse'}`}></span>
-              <span className={`w-1 h-6 bg-[#0a3633] rounded-full ${callState !== 'idle' ? 'animate-bounce delay-75' : 'animate-pulse delay-75'}`}></span>
-              <span className={`w-1 h-4 bg-[#0a3633] rounded-full ${callState !== 'idle' ? 'animate-bounce delay-150' : 'animate-pulse delay-150'}`}></span>
-              <span className="text-[11px] font-semibold text-emerald-700 ml-2">
-                {callState === 'listening'
-                  ? 'Listening...'
-                  : callState === 'thinking'
-                  ? 'Thinking...'
-                  : callState === 'speaking'
-                  ? 'Speaking...'
-                  : formatTime(callDuration)}
-              </span>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={startListening}
-                disabled={callState !== 'idle'}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold shadow-md transition-all cursor-pointer ${
-                  callState !== 'idle' ? 'bg-amber-500 text-white animate-pulse' : 'bg-[#0a3633] hover:bg-[#0a3633]/90 text-white'
-                }`}
-                title="Talk to Nadine"
-              >
-                <Mic className="w-4 h-4" />
-                <span>
-                  {callState === 'listening'
-                    ? 'Listening...'
-                    : callState === 'thinking'
-                    ? 'Thinking...'
-                    : callState === 'speaking'
-                    ? 'Speaking...'
-                    : 'Talk (تحدث)'}
-                </span>
-              </button>
-
-              <button
-                onClick={endCall}
-                className="w-10 h-10 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-md hover:scale-105 transition-all cursor-pointer"
-                title="End Call"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-          </div>
-
-          {/* Footer branding */}
-          <div className="bg-gray-50 px-4 py-2 border-t border-gray-100 text-center">
-            <p className="text-[10px] text-gray-400 font-medium">
-              Powered by <span className="text-[#0a3633] font-semibold">Next Real Estate AI</span>
-            </p>
-          </div>
-
-        </div>
-      )}
 
       <GoogleSignInModal
         isOpen={googleSignInOpen}

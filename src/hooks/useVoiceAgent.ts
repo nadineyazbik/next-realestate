@@ -5,7 +5,6 @@ type Msg = { role: 'user' | 'assistant'; text: string };
 
 const GREETING = 'أهلاً فيك! أنا نادين، مستشارتك العقارية. اضغط على زر (تحدث) لنبدأ المحادثة.';
 
-// رد احتياطي بالعامية اللبنانية (بيشتغل لما ما يكون في سيرفر)
 function localReply(text: string): string {
   const t = text.toLowerCase();
   if (t.includes('بيروت')) return 'عنا شقق وفلل حلوين ببيروت. تحب للبيع ولا للإيجار؟';
@@ -48,40 +47,41 @@ export function useVoiceAgent(active: boolean) {
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
+    if (!('speechSynthesis' in window)) return;
     const load = () => {
       voicesRef.current = window.speechSynthesis.getVoices();
     };
     load();
-    window.speechSynthesis.onvoiceschanged = load;
+    window.speechSynthesis.addEventListener('voiceschanged', load);
     return () => {
-      window.speechSynthesis.onvoiceschanged = null;
+      window.speechSynthesis.removeEventListener('voiceschanged', load);
+      window.speechSynthesis.cancel();
     };
   }, []);
 
-  useEffect(() => {
-    if (!active) {
-      try { recRef.current?.abort(); } catch {}
-      window.speechSynthesis.cancel();
-      setCallState('idle');
-      setUserText('');
-      setError(null);
-      setTranscript(GREETING);
-      historyRef.current = [];
-    }
-  }, [active]);
-
   const speak = useCallback((text: string) => {
-    window.speechSynthesis.cancel();
+    if (!('speechSynthesis' in window)) {
+      setCallState('idle');
+      return;
+    }
+    const synth = window.speechSynthesis;
+    synth.cancel();
+
+    const voices = voicesRef.current.length ? voicesRef.current : synth.getVoices();
+    const voice =
+      voices.find((v) => v.lang === 'ar-LB') ||
+      voices.find((v) => v.lang.startsWith('ar'));
+
     const u = new SpeechSynthesisUtterance(text);
-    const ar =
-      voicesRef.current.find((v) => v.lang === 'ar-LB') ||
-      voicesRef.current.find((v) => v.lang.startsWith('ar'));
-    if (ar) u.voice = ar;
-    u.lang = ar ? ar.lang : 'ar-SA';
+    u.lang = voice?.lang || 'ar-SA';
+    if (voice) u.voice = voice;
+    u.rate = 1;
     u.onstart = () => setCallState('speaking');
     u.onend = () => setCallState('idle');
     u.onerror = () => setCallState('idle');
-    window.speechSynthesis.speak(u);
+
+    setCallState('speaking');
+    synth.speak(u);
   }, []);
 
   const handleUserSpeech = useCallback(
@@ -101,6 +101,13 @@ export function useVoiceAgent(active: boolean) {
   const startListening = useCallback(() => {
     if (callState !== 'idle') return;
     setError(null);
+
+    // فتح الصوت من ضغطة المستخدم (مهم لـ Safari وبعض المتصفحات)
+    try {
+      const unlock = new SpeechSynthesisUtterance('');
+      unlock.volume = 0;
+      window.speechSynthesis.speak(unlock);
+    } catch {}
 
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
@@ -157,7 +164,7 @@ export function useVoiceAgent(active: boolean) {
 
   const stopAll = useCallback(() => {
     try { recRef.current?.abort(); } catch {}
-    window.speechSynthesis.cancel();
+    try { window.speechSynthesis?.cancel(); } catch {}
     setCallState('idle');
   }, []);
 
