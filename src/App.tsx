@@ -10,7 +10,7 @@ import { GoogleSignInModal } from './components/GoogleSignInModal';
 import { FavoritesDrawer } from './components/FavoritesDrawer';
 import { InquiryModal } from './components/InquiryModal';
 import { AddPropertyModal } from './components/AddPropertyModal';
-import { AIAssistantModal } from './components/AIAssistantModal';
+import { AICallWidget } from './AICallWidget';
 import { AdminPortalModal } from './components/AdminPortalModal';
 import { Property, Language, SearchFilterState } from './types';
 import { mockProperties } from './data/properties';
@@ -532,12 +532,9 @@ export default function App() {
         lang={lang}
       />
 
-      <AIAssistantModal
+      <AICallWidget
         isOpen={aiAssistantOpen}
         onClose={() => setAiAssistantOpen(false)}
-        lang={lang}
-        onSelectProperty={handleOpenPropertyDetails}
-        onApplyFilter={handleApplyFilterFromAI}
       />
 
       <AdminPortalModal
