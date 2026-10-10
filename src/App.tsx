@@ -324,7 +324,15 @@ export default function App() {
 
   const handleSelectPropertyById = (id: string) => {
     const found = properties.find((p) => p.id === id);
-    if.found = found;
+    const handleSelectPropertyById = (id: string) => {
+  const found = properties.find((p) => p.id === id);
+  if (found) {
+    setSelectedProperty(found);
+    setViewMode('property_details');
+    window.location.hash = `#/property/${found.id}`;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+};
     if (found) {
       setSelectedProperty(found);
       setViewMode('property_details');
