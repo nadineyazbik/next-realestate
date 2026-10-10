@@ -1,5 +1,5 @@
 import React from 'react';
-import { useVoiceAgent } from './useVoiceAgent';
+import { useVoiceAgent } from './hooks/useVoiceAgent';
 import { X, Mic, PhoneOff } from 'lucide-react';
 
 interface AICallWidgetProps {
