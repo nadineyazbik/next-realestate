@@ -14,7 +14,7 @@ import { AICallWidget } from './AICallWidget';
 import { ConversationProvider } from '@elevenlabs/react';
 import { AdminPortalModal } from './components/AdminPortalModal';
 import { Property, Language, SearchFilterState } from './types';
-import { mockProperties } from './data/properties';
+import { mockProperties, LEBANON_REGIONS } from './data/properties';
 import { authService, GoogleUser } from './services/authService';
 import { X } from 'lucide-react';
 
@@ -205,30 +205,71 @@ export default function App() {
     }
   };
 
+  // ترجمة كلام نادين لقيم الموقع الصحيحة
+  const normalizeType = (raw?: string): string => {
+    const t = (raw || '').trim().toLowerCase();
+    if (!t) return '';
+    if (/apart|flat|شقة|شقه|شقق/.test(t)) return 'Apartment';
+    if (/villa|فيلا|فلة|فلل/.test(t)) return 'Villa';
+    if (/land|أرض|ارض|أراضي|اراضي/.test(t)) return 'Land';
+    if (/chalet|cabin|شاليه|شاليهات|كابين/.test(t)) return 'Chalet';
+    if (/commercial|shop|office|warehouse|store|تجاري|محل|مكتب|مستودع/.test(t)) return 'Commercial';
+    if (/house|بيت|منزل/.test(t)) return 'House';
+    if (/building|مبنى|مباني|بناية|عمارة/.test(t)) return 'Buildings and multiple units';
+    return '';
+  };
+
+  const normalizeSaleOrRental = (raw?: string): string => {
+    const t = (raw || '').trim().toLowerCase();
+    if (!t) return '';
+    if (/rent|lease|إيجار|ايجار|أجار|اجار/.test(t)) return 'rental';
+    if (/sale|sell|buy|purchase|بيع|شراء|اشتري/.test(t)) return 'sale';
+    return '';
+  };
+
+  const normalizeLocation = (raw?: string): string => {
+    const q = (raw || '').trim().toLowerCase();
+    if (!q) return '';
+    const clean = (s: string) => s.split('(')[0].trim().toLowerCase();
+    for (const region of LEBANON_REGIONS) {
+      for (const dist of region.neighborhoods) {
+        const places = [dist, ...(dist.subAreas || [])];
+        for (const p of places) {
+          if (clean(p.nameEn) === q || clean(p.nameAr) === q) {
+            return (isArabic ? p.nameAr : p.nameEn).split('(')[0].trim();
+          }
+        }
+      }
+    }
+    return (raw || '').trim();
+  };
+
   const handleApplyFilterFromAI = (filterArgs: {
     location?: string;
     propertyType?: string;
     buildingAge?: string;
     saleOrRental?: string;
   }) => {
-    const updated: SearchFilterState = {
-      ...activeFilters,
-      location: filterArgs.location || '',
-      propertyType: filterArgs.propertyType || '',
+    const location = normalizeLocation(filterArgs.location);
+    const propertyType = normalizeType(filterArgs.propertyType);
+    const saleOrRental = normalizeSaleOrRental(filterArgs.saleOrRental);
+
+    setActiveFilters((prev) => ({
+      ...prev,
+      location,
+      propertyType,
       buildingAge: filterArgs.buildingAge || '',
-      saleOrRental: filterArgs.saleOrRental || '',
-    };
-    setActiveFilters(updated);
-    if (filterArgs.propertyType) {
-      setActiveCategory(filterArgs.propertyType);
-    }
+      saleOrRental,
+    }));
+    setActiveCategory(propertyType || 'all');
+
+    const parts = [location, propertyType, saleOrRental].filter(Boolean).join(' • ');
     setFilterNotification(
       isArabic
-        ? `تصفية موصى بها من نادين: ${filterArgs.location || ''} ${
-            filterArgs.propertyType || ''
-          }`
-        : `AI Recommended Filter: ${filterArgs.location || ''} ${filterArgs.propertyType || ''}`
+        ? `تصفية موصى بها من نادين: ${parts}`
+        : `AI Recommended Filter: ${parts}`
     );
+
     const listingsEl = document.getElementById('properties-section');
     if (listingsEl) {
       listingsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -491,14 +532,12 @@ export default function App() {
         lang={lang}
       />
 
-      <ConversationProvider>
-        <AICallWidget
-          isOpen={aiAssistantOpen}
-          onClose={() => setAiAssistantOpen(false)}
-          onFilterProperties={handleApplyFilterFromAI}
-          onScheduleAppointment={handleScheduleAppointment}
-        />
-      </ConversationProvider>
+      <AICallWidget
+        isOpen={aiAssistantOpen}
+        onClose={() => setAiAssistantOpen(false)}
+        onFilterProperties={handleApplyFilterFromAI}
+        onScheduleAppointment={handleScheduleAppointment}
+      />
 
       <AdminPortalModal
         isOpen={adminPortalOpen}
