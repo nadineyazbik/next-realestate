@@ -60,53 +60,6 @@ export default function App() {
   const [filterNotification, setFilterNotification] = useState<string | null>(null);
   const isArabic = lang === 'ar';
 
-  // تحميل سكريبت ElevenLabs واستقبال أوامر نادين (Client Tools)
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = "https://elevenlabs.io/convai-widget/index.js";
-    script.async = true;
-    document.body.appendChild(script);
-
-    const handleClientToolCall = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { toolName, parameters } = customEvent.detail || {};
-
-      // 1. أداة تصفية العقارات
-      if (toolName === 'filter_properties') {
-        const { location, propertyType, action } = parameters || {};
-        handleApplyFilterFromAI({
-          location: location || '',
-          propertyType: propertyType || '',
-          saleOrRental: action || '',
-        });
-      }
-
-      // 2. أداة إرسال الموعد عبر الواتساب للإدارة
-      if (toolName === 'schedule_appointment') {
-        const { client_name, phone_number, property_details, appointment_date_time } = parameters || {};
-        const adminPhone = "96176743414";
-
-        const message = `🏢 *حجز موعد جديد عبر نادين (Next Real Estate)*\n\n` +
-                        `👤 *اسم الزبون:* ${client_name || 'غير محدد'}\n` +
-                        `📞 *رقم الهاتف:* ${phone_number || 'غير محدد'}\n` +
-                        `🏡 *العقار المطلوب:* ${property_details || 'غير محدد'}\n` +
-                        `📅 *الموعد المطلوب:* ${appointment_date_time || 'غير محدد'}`;
-
-        const whatsappUrl = `https://api.whatsapp.com/send?phone=${adminPhone}&text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
-      }
-    };
-
-    window.addEventListener('elevenlabs-convai:call', handleClientToolCall);
-
-    return () => {
-      window.removeEventListener('elevenlabs-convai:call', handleClientToolCall);
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
-
   useEffect(() => {
     document.documentElement.dir = isArabic ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
@@ -324,21 +277,31 @@ export default function App() {
 
   const handleSelectPropertyById = (id: string) => {
     const found = properties.find((p) => p.id === id);
-    const handleSelectPropertyById = (id: string) => {
-  const found = properties.find((p) => p.id === id);
-  if (found) {
-    setSelectedProperty(found);
-    setViewMode('property_details');
-    window.location.hash = `#/property/${found.id}`;
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  }
-};
     if (found) {
       setSelectedProperty(found);
       setViewMode('property_details');
       window.location.hash = `#/property/${found.id}`;
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
+  };
+
+  const handleScheduleAppointment = (p: {
+    client_name?: string;
+    phone_number?: string;
+    property_details?: string;
+    appointment_date_time?: string;
+  }) => {
+    const adminPhone = '96176743414';
+    const message =
+      `🏢 *حجز موعد جديد عبر نادين (Next Real Estate)*\n\n` +
+      `👤 *اسم الزبون:* ${p.client_name || 'غير محدد'}\n` +
+      `📞 *رقم الهاتف:* ${p.phone_number || 'غير محدد'}\n` +
+      `🏡 *العقار المطلوب:* ${p.property_details || 'غير محدد'}\n` +
+      `📅 *الموعد المطلوب:* ${p.appointment_date_time || 'غير محدد'}`;
+    window.open(
+      `https://api.whatsapp.com/send?phone=${adminPhone}&text=${encodeURIComponent(message)}`,
+      '_blank'
+    );
   };
 
   const handleSeeAll = (section: 'platinum' | 'trending' | 'all') => {
@@ -466,9 +429,9 @@ export default function App() {
         className="fixed bottom-6 right-6 z-[9999] bg-[#0b3c35] text-white p-3.5 pr-5 rounded-full shadow-2xl flex items-center gap-3 hover:bg-[#082e29] transition-all duration-300 hover:scale-105 group border border-emerald-500/30"
       >
         <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-emerald-400">
-          <img 
-            src="/WhatsApp Image 2026-10-08 at 3.13.06 PM.jpeg" 
-            alt="Nadine" 
+          <img
+            src="/WhatsApp Image 2026-10-08 at 3.13.06 PM.jpeg"
+            alt="Nadine"
             className="w-full h-full object-cover"
           />
           <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
@@ -478,11 +441,6 @@ export default function App() {
           <div className="text-[11px] text-emerald-200 font-medium">Talk with Nadine AI</div>
         </div>
       </button>
-
-      {/* إخفاء سكريبت ElevenLabs الافتراضي كلياً */}
-      <div className="hidden">
-        <elevenlabs-convai agent-id="agent_2301m4gtgwnkem3bwyghjcqt8sjs"></elevenlabs-convai>
-      </div>
 
       <GoogleSignInModal
         isOpen={googleSignInOpen}
@@ -535,6 +493,8 @@ export default function App() {
       <AICallWidget
         isOpen={aiAssistantOpen}
         onClose={() => setAiAssistantOpen(false)}
+        onFilterProperties={handleApplyFilterFromAI}
+        onScheduleAppointment={handleScheduleAppointment}
       />
 
       <AdminPortalModal
