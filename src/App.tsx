@@ -11,6 +11,7 @@ import { FavoritesDrawer } from './components/FavoritesDrawer';
 import { InquiryModal } from './components/InquiryModal';
 import { AddPropertyModal } from './components/AddPropertyModal';
 import { AICallWidget } from './AICallWidget';
+import { ConversationProvider } from '@elevenlabs/react';
 import { AdminPortalModal } from './components/AdminPortalModal';
 import { Property, Language, SearchFilterState } from './types';
 import { mockProperties } from './data/properties';
@@ -490,12 +491,14 @@ export default function App() {
         lang={lang}
       />
 
-      <AICallWidget
-        isOpen={aiAssistantOpen}
-        onClose={() => setAiAssistantOpen(false)}
-        onFilterProperties={handleApplyFilterFromAI}
-        onScheduleAppointment={handleScheduleAppointment}
-      />
+      <ConversationProvider>
+        <AICallWidget
+          isOpen={aiAssistantOpen}
+          onClose={() => setAiAssistantOpen(false)}
+          onFilterProperties={handleApplyFilterFromAI}
+          onScheduleAppointment={handleScheduleAppointment}
+        />
+      </ConversationProvider>
 
       <AdminPortalModal
         isOpen={adminPortalOpen}
