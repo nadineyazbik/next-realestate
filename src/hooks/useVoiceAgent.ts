@@ -3,21 +3,21 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 export type CallState = 'idle' | 'listening' | 'thinking' | 'speaking';
 type Msg = { role: 'user' | 'assistant'; text: string };
 
-const GREETING = 'أهلاً فيك! أنا نادين، مستشارتك العقارية. اضغط على زر (تحدث) لنبدأ المحادثة.';
+const GREETING = 'أهلاً فيك! أنا نادين، مستشارتك العقارية. اضغطي على زر (تحدث) لنبدأ المحادثة.';
 
 function localReply(text: string): string {
   const t = text.toLowerCase();
-  if (t.includes('بيروت')) return 'عنا شقق وفلل حلوين ببيروت. تحب للبيع ولا للإيجار؟';
+  if (t.includes('بيروت')) return 'عنا شقق وفلل حلوين ببيروت. بتحبي للبيع ولا للإيجار؟';
   if (t.includes('كسروان') || t.includes('جونية')) return 'كسروان عنا فيها خيارات كتير حلوة، شقق وفلل بإطلالات. شو ميزانيتك؟';
   if (t.includes('جبل')) return 'بجبل لبنان عنا فلل وشاليهات. كم غرفة نوم بدك؟';
   if (t.includes('إيجار') || t.includes('ايجار')) return 'عنا عقارات للإيجار. بأي منطقة بدك؟';
   if (t.includes('بيع') || t.includes('شراء') || t.includes('اشتري')) return 'تمام، عنا عقارات للبيع. شو نوع العقار اللي بدك ياه؟ شقة، فيلا، ولا أرض؟';
-  if (t.includes('سعر') || t.includes('كم') || t.includes('ميزانية')) return 'الأسعار بتبدأ من حوالي 150 ألف دولار، وبتختلف حسب المنطقة. أي منطقة بتحب؟';
+  if (t.includes('سعر') || t.includes('كم') || t.includes('ميزانية')) return 'الأسعار بتبدأ من حوالي 150 ألف دولار، وبتختلف حسب المنطقة. أي منطقة بتحبي؟';
   if (t.includes('شقة') || t.includes('شقه')) return 'عنا شقق كتير حلوة. بأي منطقة وكم غرفة نوم بدك؟';
-  if (t.includes('فيلا') || t.includes('فلة')) return 'عنا فلل فخمة. بأي منطقة بتفضل؟';
+  if (t.includes('فيلا') || t.includes('فلة')) return 'عنا فلل فخمة. بأي منطقة بتفضلي؟';
   if (t.includes('مرحبا') || t.includes('هاي') || t.includes('أهلا') || t.includes('اهلا'))
-    return 'أهلين فيك! كيف فيني ساعدك بالعقارات اليوم؟';
-  return 'سمعتك. فيك تقلي شو نوع العقار والمنطقة اللي بتفضلها؟';
+    return 'أهلين فيكي! كيف فيني ساعدك بالعقارات اليوم؟';
+  return 'سمعتك. فيكي تقليلي شو نوع العقار والمنطقة اللي بتفضليها؟';
 }
 
 async function getAIReply(message: string, history: Msg[]): Promise<string> {
@@ -36,7 +36,7 @@ async function getAIReply(message: string, history: Msg[]): Promise<string> {
   }
 }
 
-export function useVoiceAgent(active: boolean) {
+export function useVoiceAgent() {
   const [callState, setCallState] = useState<CallState>('idle');
   const [transcript, setTranscript] = useState<string>(GREETING);
   const [userText, setUserText] = useState<string>('');
@@ -102,7 +102,6 @@ export function useVoiceAgent(active: boolean) {
     if (callState !== 'idle') return;
     setError(null);
 
-    // فتح الصوت من ضغطة المستخدم (مهم لـ Safari وبعض المتصفحات)
     try {
       const unlock = new SpeechSynthesisUtterance('');
       unlock.volume = 0;
@@ -140,8 +139,8 @@ export function useVoiceAgent(active: boolean) {
     rec.onerror = (e: any) => {
       console.error('SpeechRecognition error:', e.error);
       const msgs: Record<string, string> = {
-        'not-allowed': 'الميكروفون محظور. اضغطي على القفل جنب الرابط واسمحي بالميكروفون.',
-        'service-not-allowed': 'الميكروفون محظور. اسمحي بالميكروفون من إعدادات المتصفح.',
+        'not-allowed': 'الميكروفون محظور. اسمحي بالميكروفون.',
+        'service-not-allowed': 'الميكروفون محظور من إعدادات المتصفح.',
         'no-speech': 'ما سمعت شي. جرّبي تحكي أقرب للميكروفون.',
         'audio-capture': 'ما لقيت ميكروفون موصول.',
         network: 'مشكلة بالإنترنت بخدمة التعرف على الصوت.',

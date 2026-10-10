@@ -67,11 +67,11 @@ export default function App() {
     script.async = true;
     document.body.appendChild(script);
 
-    // الاستماع لأوامر نادين الصوتية وتطبيقها بالموقع والواتساب
-    const handleClientToolCall = (event: any) => {
-      const { toolName, parameters } = event.detail || {};
+    const handleClientToolCall = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { toolName, parameters } = customEvent.detail || {};
 
-      // 1. تصفية الشقق والتحكم بالواجهة
+      // 1. أداة تصفية العقارات
       if (toolName === 'filter_properties') {
         const { location, propertyType, action } = parameters || {};
         handleApplyFilterFromAI({
@@ -81,10 +81,10 @@ export default function App() {
         });
       }
 
-      // 2. إرسال موعد الحجز عبر الواتساب للإدارة
+      // 2. أداة إرسال الموعد عبر الواتساب للإدارة
       if (toolName === 'schedule_appointment') {
         const { client_name, phone_number, property_details, appointment_date_time } = parameters || {};
-        const adminPhone = "96176743414"; // رقم إدارة Next Real Estate
+        const adminPhone = "96176743414";
 
         const message = `🏢 *حجز موعد جديد عبر نادين (Next Real Estate)*\n\n` +
                         `👤 *اسم الزبون:* ${client_name || 'غير محدد'}\n` +
@@ -270,7 +270,7 @@ export default function App() {
     }
     setFilterNotification(
       isArabic
-        ? `تصفية موصى بها من المساعدة نادين: ${filterArgs.location || ''} ${
+        ? `تصفية موصى بها من نادين: ${filterArgs.location || ''} ${
             filterArgs.propertyType || ''
           }`
         : `AI Recommended Filter: ${filterArgs.location || ''} ${filterArgs.propertyType || ''}`
@@ -324,6 +324,7 @@ export default function App() {
 
   const handleSelectPropertyById = (id: string) => {
     const found = properties.find((p) => p.id === id);
+    if.found = found;
     if (found) {
       setSelectedProperty(found);
       setViewMode('property_details');
@@ -451,8 +452,8 @@ export default function App() {
 
       <Footer lang={lang} onNavigate={handleNavigation} onOpenAdminPortal={() => setAdminPortalOpen(true)} />
 
-      {/* --- زر Widget الرسمي لنادين من ElevenLabs --- */}
-      <div className="fixed bottom-6 right-6 z-[9999]">
+      {/* ElevenLabs Widget مع إخفاء الـ Widget الافتراضي تماماً واعتماد المودال المخصص */}
+      <div className="fixed bottom-6 right-6 z-[9999] hidden">
         <elevenlabs-convai agent-id="agent_2301m4gtgwnkem3bwyghjcqt8sjs"></elevenlabs-convai>
       </div>
 
